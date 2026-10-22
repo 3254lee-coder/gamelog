@@ -1,0 +1,7 @@
+@import "tailwindcss";
+:root { color-scheme:dark; }
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { background:#0c0e13; color:#f5f5f8; font-family:Arial,"Apple SD Gothic Neo","Malgun Gothic",sans-serif; }
+.container-site { width:min(100% - 36px,1180px); margin-inline:auto; }
+@media(min-width:768px){.container-site{width:min(100% - 64px,1180px)}}
