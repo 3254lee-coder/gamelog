@@ -20,6 +20,7 @@ export const games: Game[] = [
   reviews: 0,
   accent: "#9bcaa5",
   icon: "🌱",
+  image: "/games/pokemon-pokopia.jpg",
   description: "포켓몬들과 함께 마을을 만들고 꾸미는 슬로 라이프 게임."
 },
 {
@@ -33,6 +34,7 @@ export const games: Game[] = [
   reviews: 0,
   accent: "#788b78",
   icon: "🎯",
+  image: "/games/modern-warfare-4.jpg",
   description: "캠페인과 멀티플레이, DMZ를 즐기는 밀리터리 FPS."
 },
 {
@@ -46,6 +48,7 @@ export const games: Game[] = [
   reviews: 0,
   accent: "#7ba5bc",
   icon: "⚔️",
+  image: "/games/league-of-legends.jpg",
   description: "다섯 명의 팀원이 전략과 협동으로 승리를 겨루는 게임."
 },
 {
@@ -59,6 +62,7 @@ export const games: Game[] = [
   reviews: 0,
   accent: "#85b99b",
   icon: "⚽",
+  image: "/games/fc-online.jpg",
   description: "선수와 팀을 구성해 축구 경기를 즐기는 온라인 게임."
 },
 {
@@ -72,6 +76,7 @@ export const games: Game[] = [
   reviews: 0,
   accent: "#e9ad70",
   icon: "☀️",
+  image: "/games/overwatch-2.jpg",
   description: "개성 있는 영웅을 선택해 팀원들과 협력하는 슈팅 게임."
 },
 {
@@ -85,6 +90,7 @@ export const games: Game[] = [
   reviews: 0,
   accent: "#c6ae77",
   icon: "🪖",
+  image: "/games/pubg.jpg",
   description: "생존을 위해 장비를 수집하고 마지막까지 경쟁하는 게임."
 },
 {
@@ -98,6 +104,7 @@ export const games: Game[] = [
   reviews: 0,
   accent: "#e28e94",
   icon: "✦",
+  image: "/games/valorant.jpg",
   description: "요원들의 능력과 정밀한 사격을 결합한 팀 기반 전술 FPS."
 }
 
