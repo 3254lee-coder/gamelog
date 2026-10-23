@@ -4,10 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
-  Star,
-  MessageSquareText,
   CalendarDays,
-  Gamepad2,
   Sparkles,
 } from "lucide-react";
 import { games } from "@/lib/games";
@@ -27,8 +24,6 @@ export default async function GameDetail({
 
   if (!game) notFound();
 
-  const hasSampleRating = game.reviews > 0;
-
   return (
     <main className="container-site min-h-[65vh] pb-24 pt-10 text-[#384b61]">
       <Link
@@ -41,7 +36,7 @@ export default async function GameDetail({
 
       <section className="mt-7 overflow-hidden rounded-[28px] border border-[#e2e6eb] bg-white shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[360px_1fr]">
-          {/* 게임 이미지 또는 임시 일러스트 */}
+          {/* 게임 포스터 */}
           <div className="relative min-h-[420px] overflow-hidden bg-[#e8edf4]">
             {game.image ? (
               <Image
@@ -113,74 +108,37 @@ export default async function GameDetail({
               ))}
             </div>
 
-            {/* 게임 통계 */}
-            <div className="mt-9 grid grid-cols-2 gap-4 border-t border-[#edf0f3] pt-7 sm:grid-cols-3">
-              <div>
-                <p className="text-xs text-[#8995a5]">
-                  유저 평점 · 샘플
-                </p>
-
-                {hasSampleRating ? (
-                  <p className="mt-2 flex items-center gap-1.5 text-2xl font-extrabold text-[#d9a43d]">
-                    <Star size={22} fill="currentColor" />
-                    {game.rating.toFixed(1)}
-                    <span className="text-xs font-normal text-[#8995a5]">
-                      / 10
-                    </span>
-                  </p>
-                ) : (
-                  <p className="mt-2 flex items-center gap-2 text-lg font-bold text-[#6686b5]">
-                    <Star size={20} />
-                    평가 전
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <p className="text-xs text-[#8995a5]">
-                  리뷰 수 · 샘플
-                </p>
-                <p className="mt-2 flex items-center gap-2 text-xl font-bold">
-                  <MessageSquareText
-                    size={20}
-                    className="text-[#6686b5]"
-                  />
-                  {hasSampleRating
-                    ? game.reviews.toLocaleString()
-                    : "아직 없음"}
-                </p>
-              </div>
-
-              <div className="col-span-2 sm:col-span-1">
-                <p className="text-xs text-[#8995a5]">
-                  장르 / 출시연도
-                </p>
-                <p className="mt-2 flex items-center gap-2 text-sm font-bold">
-                  <CalendarDays
-                    size={17}
-                    className="text-[#6686b5]"
-                  />
-                  {game.genre} · {game.year}
-                </p>
-              </div>
+            {/* 장르 및 출시연도 */}
+            <div className="mt-9 border-t border-[#edf0f3] pt-7">
+              <p className="text-xs text-[#8995a5]">
+                장르 / 출시연도
+              </p>
+              <p className="mt-2 flex items-center gap-2 text-sm font-bold">
+                <CalendarDays
+                  size={17}
+                  className="text-[#6686b5]"
+                />
+                {game.genre} · {game.year}
+              </p>
             </div>
 
-            <div className="mt-8 flex items-start gap-3 rounded-2xl bg-[#f3f6fa] p-4">
-              <Gamepad2
-                size={20}
-                className="mt-0.5 shrink-0 text-[#6686b5]"
-              />
-              <p className="text-xs leading-6 text-[#66768b]">
-                {hasSampleRating
-                  ? "위 평점과 리뷰 수는 샘플 데이터입니다. 실제 회원들이 작성한 리뷰와 평점은 아래에서 확인할 수 있습니다."
-                  : "아직 등록된 샘플 평점이 없습니다. 아래에서 첫 리뷰를 작성해 보세요. 실제 회원 리뷰와 평점은 아래 리뷰 영역에서 확인할 수 있습니다."}
+            {/* 실제 회원 평점 안내 */}
+            <div className="mt-8 rounded-2xl bg-[#f3f6fa] p-5">
+              <p className="text-sm font-bold text-[#384b61]">
+                플레이어들의 실제 평가
+              </p>
+              <p className="mt-2 text-xs leading-6 text-[#66768b]">
+                GAMELOG 회원들이 직접 작성한 리뷰와
+                평균 별점은 아래에서 확인할 수 있습니다.
+                리뷰를 작성하거나 수정하면 평가 결과에
+                반영됩니다.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 실제 회원 리뷰 기능 유지 */}
+      {/* 실제 회원 리뷰 및 평균 평점 */}
       <ReviewSection gameId={game.id} />
     </main>
   );
