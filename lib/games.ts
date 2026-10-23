@@ -8,7 +8,99 @@ export const games: Game[] = [
 {id:'hades',title:'하데스',englishTitle:'HADES',genre:'로그라이크',platforms:['PC','PlayStation','Xbox','Switch','Mobile'],year:2020,rating:9.1,reviews:1220,accent:'#b45b5b',icon:'♜',image:'/games/hades.jpg',description:'매번 달라지는 탈출 시도가 매력적인 액션 로그라이크.'},
 {id:'hollow-knight',title:'할로우 나이트',englishTitle:'HOLLOW KNIGHT',genre:'메트로배니아',platforms:['PC','PlayStation','Xbox','Switch'],year:2017,rating:9.0,reviews:1604,accent:'#657c9a',icon:'☾',image:'/games/hollow-knight.jpg',description:'아름답고 쓸쓸한 지하 왕국을 탐험하는 액션 게임.'},
 {id:'cyberpunk-2077',title:'사이버펑크 2077',englishTitle:'CYBERPUNK 2077',genre:'액션 RPG',platforms:['PC','PlayStation','Xbox','Switch'],year:2020,rating:8.8,reviews:2130,accent:'#b7a74b',icon:'⌁',image:'/games/cyberpunk-2077.jpg',description:'미래 도시 나이트 시티에서 펼쳐지는 이야기.'},
-{id:'minecraft',title:'마인크래프트',englishTitle:'MINECRAFT',genre:'샌드박스',platforms:['PC','PlayStation','Xbox','Switch','Mobile'],year:2011,rating:9.0,reviews:4280,accent:'#659267',icon:'▦',image:'/games/minecraft.jpg',description:'상상하는 세계를 직접 만들고 탐험하는 샌드박스 게임.'}
+{id:'minecraft',title:'마인크래프트',englishTitle:'MINECRAFT',genre:'샌드박스',platforms:['PC','PlayStation','Xbox','Switch','Mobile'],year:2011,rating:9.0,reviews:4280,accent:'#659267',icon:'▦',image:'/games/minecraft.jpg',description:'상상하는 세계를 직접 만들고 탐험하는 샌드박스 게임.'},
+{
+  id: "pokemon-pokopia",
+  title: "포켓몬 포코피아",
+  englishTitle: "POKÉMON POKOPIA",
+  genre: "생활 시뮬레이션",
+  platforms: ["Switch"],
+  year: 2026,
+  rating: 0,
+  reviews: 0,
+  accent: "#9bcaa5",
+  icon: "🌱",
+  description: "포켓몬들과 함께 마을을 만들고 꾸미는 슬로 라이프 게임."
+},
+{
+  id: "modern-warfare-4",
+  title: "콜 오브 듀티: 모던 워페어 4",
+  englishTitle: "CALL OF DUTY: MODERN WARFARE 4",
+  genre: "FPS",
+  platforms: ["PC", "PlayStation", "Xbox", "Switch"],
+  year: 2026,
+  rating: 0,
+  reviews: 0,
+  accent: "#788b78",
+  icon: "🎯",
+  description: "캠페인과 멀티플레이, DMZ를 즐기는 밀리터리 FPS."
+},
+{
+  id: "league-of-legends",
+  title: "리그 오브 레전드",
+  englishTitle: "LEAGUE OF LEGENDS",
+  genre: "MOBA",
+  platforms: ["PC"],
+  year: 2009,
+  rating: 0,
+  reviews: 0,
+  accent: "#7ba5bc",
+  icon: "⚔️",
+  description: "다섯 명의 팀원이 전략과 협동으로 승리를 겨루는 게임."
+},
+{
+  id: "fc-online",
+  title: "FC 온라인",
+  englishTitle: "FC ONLINE",
+  genre: "스포츠",
+  platforms: ["PC", "Mobile"],
+  year: 2018,
+  rating: 0,
+  reviews: 0,
+  accent: "#85b99b",
+  icon: "⚽",
+  description: "선수와 팀을 구성해 축구 경기를 즐기는 온라인 게임."
+},
+{
+  id: "overwatch-2",
+  title: "오버워치",
+  englishTitle: "OVERWATCH",
+  genre: "팀 기반 FPS",
+  platforms: ["PC", "PlayStation", "Xbox", "Switch"],
+  year: 2022,
+  rating: 0,
+  reviews: 0,
+  accent: "#e9ad70",
+  icon: "☀️",
+  description: "개성 있는 영웅을 선택해 팀원들과 협력하는 슈팅 게임."
+},
+{
+  id: "pubg",
+  title: "배틀그라운드",
+  englishTitle: "PUBG: BATTLEGROUNDS",
+  genre: "배틀로얄",
+  platforms: ["PC", "PlayStation", "Xbox"],
+  year: 2017,
+  rating: 0,
+  reviews: 0,
+  accent: "#c6ae77",
+  icon: "🪖",
+  description: "생존을 위해 장비를 수집하고 마지막까지 경쟁하는 게임."
+},
+{
+  id: "valorant",
+  title: "발로란트",
+  englishTitle: "VALORANT",
+  genre: "전술 FPS",
+  platforms: ["PC", "PlayStation", "Xbox"],
+  year: 2020,
+  rating: 0,
+  reviews: 0,
+  accent: "#e28e94",
+  icon: "✦",
+  description: "요원들의 능력과 정밀한 사격을 결합한 팀 기반 전술 FPS."
+}
+
 ];
 export const recentReviews = [
 {user:'pixel_park',game:'발더스 게이트 3',score:9.5,text:'선택 하나하나가 모험을 완전히 다르게 만듭니다.',time:'2시간 전'},
