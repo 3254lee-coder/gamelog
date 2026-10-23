@@ -4,14 +4,14 @@ import { Star } from "lucide-react";
 import type { Game } from "@/lib/games";
 
 export default function GameCard({ game }: { game: Game }) {
+  const hasRating = game.reviews > 0;
+
   return (
     <Link
       href={`/games/${game.id}`}
       className="group overflow-hidden rounded-2xl border border-[#e2e6eb] bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg"
     >
-      <div
-        className="relative aspect-[3/4] overflow-hidden bg-[#e8edf4]"
-      >
+      <div className="relative aspect-[3/4] overflow-hidden bg-[#e8edf4]">
         {game.image ? (
           <img
             src={game.image}
@@ -20,14 +20,19 @@ export default function GameCard({ game }: { game: Game }) {
           />
         ) : (
           <div
-            className="flex h-full w-full items-center justify-center text-7xl"
+            className="flex h-full w-full flex-col items-center justify-center gap-4"
             style={{ backgroundColor: `${game.accent}33` }}
           >
-            {game.icon}
+            <span className="text-7xl transition-transform duration-300 group-hover:scale-110">
+              {game.icon}
+            </span>
+            <span className="rounded-full bg-white/75 px-3 py-1 text-xs font-bold text-[#6686b5]">
+              NEW GAME
+            </span>
           </div>
         )}
 
-        <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold tracking-wide text-[#384b61] shadow-sm">
+        <span className="absolute bottom-3 left-3 max-w-[calc(100%-24px)] truncate rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold tracking-wide text-[#384b61] shadow-sm">
           {game.englishTitle}
         </span>
       </div>
@@ -42,13 +47,22 @@ export default function GameCard({ game }: { game: Game }) {
         </p>
 
         <div className="mt-4 flex items-center justify-between gap-2">
-          <span className="flex items-center gap-1 text-sm font-bold text-[#d9a43d]">
-            <Star size={15} fill="currentColor" />
-            {game.rating.toFixed(1)}
-          </span>
+          {hasRating ? (
+            <span className="flex items-center gap-1 text-sm font-bold text-[#d9a43d]">
+              <Star size={15} fill="currentColor" />
+              {game.rating.toFixed(1)}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-xs font-bold text-[#6686b5]">
+              <Star size={15} />
+              평가 전
+            </span>
+          )}
 
           <span className="text-xs text-[#8995a5]">
-            리뷰 {game.reviews.toLocaleString()}개
+            {hasRating
+              ? `리뷰 ${game.reviews.toLocaleString()}개`
+              : "첫 리뷰를 남겨주세요"}
           </span>
         </div>
       </div>
