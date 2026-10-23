@@ -1,0 +1,5 @@
+'use client';
+import Link from 'next/link';
+import {useEffect,useState} from 'react';
+import {getSupabase} from '@/lib/supabase';
+export default function AuthStatus(){const [email,setEmail]=useState<string|null>(null);const [ready,setReady]=useState(false);useEffect(()=>{const db=getSupabase();if(!db){setReady(true);return;}db.auth.getUser().then(({data})=>{setEmail(data.user?.email??null);setReady(true)});const {data:{subscription}}=db.auth.onAuthStateChange((_event,session)=>setEmail(session?.user.email??null));return()=>subscription.unsubscribe()},[]);return <div className="flex items-center gap-3">{email?<><Link href="/account" className="max-w-36 truncate text-xs text-slate-300">{email}</Link><button className="text-xs text-violet-300" onClick={async()=>{await getSupabase()?.auth.signOut();setEmail(null)}}>로그아웃</button></>:<Link href="/login" className="rounded-full border border-white/15 px-4 py-2 text-xs text-slate-200 hover:border-violet-400">{ready?'로그인 / 회원가입':'확인 중'}</Link>}</div>}
