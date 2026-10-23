@@ -27,9 +27,10 @@ export default async function GameDetail({
 
   if (!game) notFound();
 
+  const hasSampleRating = game.reviews > 0;
+
   return (
     <main className="container-site min-h-[65vh] pb-24 pt-10 text-[#384b61]">
-      {/* 게임 목록으로 돌아가기 */}
       <Link
         href="/games"
         className="inline-flex items-center gap-2 text-sm font-semibold text-[#6686b5] transition hover:text-[#384b61]"
@@ -38,19 +39,43 @@ export default async function GameDetail({
         게임 목록으로
       </Link>
 
-      {/* 게임 상세 정보 */}
       <section className="mt-7 overflow-hidden rounded-[28px] border border-[#e2e6eb] bg-white shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[360px_1fr]">
-          {/* 게임 손그림 이미지 */}
+          {/* 게임 이미지 또는 임시 일러스트 */}
           <div className="relative min-h-[420px] overflow-hidden bg-[#e8edf4]">
-            <Image
-              src={game.image ?? "/games/elden-ring.jpg"}
-              alt={`${game.title} 손그림 포스터`}
-              fill
-              sizes="(max-width: 1024px) 100vw, 360px"
-              className="object-cover"
-              priority
-            />
+            {game.image ? (
+              <Image
+                src={game.image}
+                alt={`${game.title} 손그림 포스터`}
+                fill
+                sizes="(max-width: 1024px) 100vw, 360px"
+                className="object-cover"
+                priority
+              />
+            ) : (
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center gap-6 p-8"
+                style={{
+                  backgroundColor: `${game.accent}33`,
+                }}
+              >
+                <span
+                  className="select-none text-8xl"
+                  role="img"
+                  aria-label={`${game.title} 게임 아이콘`}
+                >
+                  {game.icon}
+                </span>
+
+                <div className="rounded-full bg-white/80 px-5 py-2 text-xs font-bold tracking-widest text-[#6686b5]">
+                  NEW GAME
+                </div>
+
+                <p className="max-w-full break-words text-center text-sm font-bold tracking-wide text-[#384b61]">
+                  {game.englishTitle}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 게임 정보 */}
@@ -94,13 +119,21 @@ export default async function GameDetail({
                 <p className="text-xs text-[#8995a5]">
                   유저 평점 · 샘플
                 </p>
-                <p className="mt-2 flex items-center gap-1.5 text-2xl font-extrabold text-[#d9a43d]">
-                  <Star size={22} fill="currentColor" />
-                  {game.rating.toFixed(1)}
-                  <span className="text-xs font-normal text-[#8995a5]">
-                    / 10
-                  </span>
-                </p>
+
+                {hasSampleRating ? (
+                  <p className="mt-2 flex items-center gap-1.5 text-2xl font-extrabold text-[#d9a43d]">
+                    <Star size={22} fill="currentColor" />
+                    {game.rating.toFixed(1)}
+                    <span className="text-xs font-normal text-[#8995a5]">
+                      / 10
+                    </span>
+                  </p>
+                ) : (
+                  <p className="mt-2 flex items-center gap-2 text-lg font-bold text-[#6686b5]">
+                    <Star size={20} />
+                    평가 전
+                  </p>
+                )}
               </div>
 
               <div>
@@ -112,7 +145,9 @@ export default async function GameDetail({
                     size={20}
                     className="text-[#6686b5]"
                   />
-                  {game.reviews.toLocaleString()}
+                  {hasSampleRating
+                    ? game.reviews.toLocaleString()
+                    : "아직 없음"}
                 </p>
               </div>
 
@@ -136,16 +171,16 @@ export default async function GameDetail({
                 className="mt-0.5 shrink-0 text-[#6686b5]"
               />
               <p className="text-xs leading-6 text-[#66768b]">
-                위 평점과 리뷰 수는 샘플 데이터입니다.
-                실제 회원들이 작성한 리뷰와 평점은 아래에서
-                확인할 수 있습니다.
+                {hasSampleRating
+                  ? "위 평점과 리뷰 수는 샘플 데이터입니다. 실제 회원들이 작성한 리뷰와 평점은 아래에서 확인할 수 있습니다."
+                  : "아직 등록된 샘플 평점이 없습니다. 아래에서 첫 리뷰를 작성해 보세요. 실제 회원 리뷰와 평점은 아래 리뷰 영역에서 확인할 수 있습니다."}
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 실제 회원 리뷰 기능 — 기존 코드 유지 */}
+      {/* 실제 회원 리뷰 기능 유지 */}
       <ReviewSection gameId={game.id} />
     </main>
   );
