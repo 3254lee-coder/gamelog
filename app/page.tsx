@@ -10,7 +10,7 @@ import {
   PenLine,
 } from "lucide-react";
 import { games, recentReviews } from "@/lib/games";
-
+import GameCard from "@/components/game-card";
 export default function Home() {
   const featured = games.slice(0, 4);
   const top = [...games].sort((a, b) => b.rating - a.rating);
@@ -104,42 +104,10 @@ export default function Home() {
 
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
           {featured.map((game) => (
-            <Link
-              key={game.id}
-              href={`/games/${game.id}`}
-              className="group overflow-hidden rounded-2xl border border-[#e2e6eb] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
-            >
-              <div
-                className="flex aspect-[3/4] flex-col items-center justify-center gap-5 p-5"
-                style={{
-                  background: `linear-gradient(145deg, ${game.accent}33, #e8edf4)`,
-                }}
-              >
-                <span className="text-7xl transition group-hover:scale-110">
-                  {game.icon}
-                </span>
-                <span className="text-center text-sm font-extrabold text-[#384b61]">
-                  {game.title}
-                </span>
-              </div>
-
-              <div className="p-4">
-                <h3 className="truncate text-sm font-bold">
-                  {game.title}
-                </h3>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-[#8995a5]">
-                    {game.genre}
-                  </span>
-                  <span className="flex items-center gap-1 text-sm font-bold text-[#d9a43d]">
-                    <Star size={14} fill="currentColor" />
-                    {game.rating.toFixed(1)}
-                  </span>
-                </div>
-              </div>
-            </Link>
+            <GameCard key={game.id} game={game} />
           ))}
         </div>
+
       </section>
 
       {/* 평점과 리뷰 */}
