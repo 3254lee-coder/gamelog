@@ -1,4 +1,57 @@
-import Link from 'next/link';
-import { Star } from 'lucide-react';
-import type { Game } from '@/lib/games';
-export default function GameCard({game}:{game:Game}){return <Link href={`/games/${game.id}`} className="group overflow-hidden rounded-2xl border border-white/10 bg-[#171a23] transition hover:-translate-y-1 hover:border-violet-400/50"><div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden" style={{background:`linear-gradient(145deg, ${game.accent}66, #11131b 78%)`}}><span className="absolute -right-8 -top-14 text-[190px] font-bold opacity-10" aria-hidden="true">{game.icon}</span><span className="text-7xl text-white/70 transition-transform group-hover:scale-110" aria-hidden="true">{game.icon}</span><span className="absolute bottom-3 left-3 rounded-md bg-black/45 px-2 py-1 text-[10px] font-semibold tracking-widest text-white/90">{game.englishTitle}</span></div><div className="p-4"><p className="truncate text-base font-semibold">{game.title}</p><p className="mt-1 text-xs text-slate-400">{game.genre} · {game.year}</p><div className="mt-4 flex items-center justify-between"><span className="flex items-center gap-1 text-sm font-bold text-amber-400"><Star size={15} fill="currentColor"/>{game.rating.toFixed(1)}</span><span className="text-xs text-slate-500">리뷰 {game.reviews.toLocaleString()}개</span></div></div></Link>}
+
+import Link from "next/link";
+import { Star } from "lucide-react";
+import type { Game } from "@/lib/games";
+
+export default function GameCard({ game }: { game: Game }) {
+  return (
+    <Link
+      href={`/games/${game.id}`}
+      className="group overflow-hidden rounded-2xl border border-[#e2e6eb] bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg"
+    >
+      <div
+        className="relative aspect-[3/4] overflow-hidden bg-[#e8edf4]"
+      >
+        {game.image ? (
+          <img
+            src={game.image}
+            alt={`${game.title} 낙서 스타일 게임 커버`}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            className="flex h-full w-full items-center justify-center text-7xl"
+            style={{ backgroundColor: `${game.accent}33` }}
+          >
+            {game.icon}
+          </div>
+        )}
+
+        <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold tracking-wide text-[#384b61] shadow-sm">
+          {game.englishTitle}
+        </span>
+      </div>
+
+      <div className="p-4 text-[#384b61]">
+        <h3 className="truncate text-sm font-bold md:text-base">
+          {game.title}
+        </h3>
+
+        <p className="mt-1 text-xs text-[#8995a5]">
+          {game.genre} · {game.year}
+        </p>
+
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1 text-sm font-bold text-[#d9a43d]">
+            <Star size={15} fill="currentColor" />
+            {game.rating.toFixed(1)}
+          </span>
+
+          <span className="text-xs text-[#8995a5]">
+            리뷰 {game.reviews.toLocaleString()}개
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
