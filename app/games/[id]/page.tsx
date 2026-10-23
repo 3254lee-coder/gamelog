@@ -44,7 +44,7 @@ export default async function GameDetail({
           {/* 게임 손그림 이미지 */}
           <div className="relative min-h-[420px] overflow-hidden bg-[#e8edf4]">
             <Image
-              src={game.image}
+              src={game.image ?? "/games/elden-ring.jpg"}
               alt={`${game.title} 손그림 포스터`}
               fill
               sizes="(max-width: 1024px) 100vw, 360px"
