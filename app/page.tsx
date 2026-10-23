@@ -1,5 +1,8 @@
 
+"use client";
+
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Gamepad2,
@@ -9,11 +12,121 @@ import {
   MessageCircle,
   PenLine,
 } from "lucide-react";
-import { games, recentReviews } from "@/lib/games";
+import { games } from "@/lib/games";
+import { getSupabase } from "@/lib/supabase";
 import GameCard from "@/components/game-card";
+
+type ReviewRow = {
+  id: string;
+  game_id: string;
+  user_id: string;
+  score: number;
+  title: string;
+  body: string;
+  created_at: string;
+};
+
+type GameStats = {
+  rating: number;
+  reviews: number;
+};
+
 export default function Home() {
-  const featured = games.slice(0, 4);
-  const top = [...games].sort((a, b) => b.rating - a.rating);
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const db = getSupabase();
+
+    async function loadReviews() {
+      if (!db) {
+        if (active) {
+          setError(true);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const { data, error: fetchError } = await db
+        .from("reviews")
+        .select("id,game_id,user_id,score,title,body,created_at")
+        .order("created_at", { ascending: false });
+
+      if (!active) return;
+
+      if (fetchError) {
+        setError(true);
+      } else {
+        setReviews((data ?? []) as ReviewRow[]);
+        setError(false);
+      }
+
+      setLoading(false);
+    }
+
+    void loadReviews();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const stats = useMemo(() => {
+    const totals: Record<
+      string,
+      { sum: number; count: number }
+    > = {};
+
+    for (const review of reviews) {
+      if (!totals[review.game_id]) {
+        totals[review.game_id] = { sum: 0, count: 0 };
+      }
+
+      totals[review.game_id].sum += review.score;
+      totals[review.game_id].count += 1;
+    }
+
+    const result: Record<string, GameStats> = {};
+
+    for (const [gameId, total] of Object.entries(totals)) {
+      result[gameId] = {
+        rating: total.sum / total.count,
+        reviews: total.count,
+      };
+    }
+
+    return result;
+  }, [reviews]);
+
+  const featured = games.slice(0, 4).map((game) => ({
+    ...game,
+    rating: stats[game.id]?.rating ?? 0,
+    reviews: stats[game.id]?.reviews ?? 0,
+  }));
+
+  const top = useMemo(
+    () =>
+      games
+        .filter((game) => (stats[game.id]?.reviews ?? 0) > 0)
+        .sort((a, b) => {
+          const ratingDiff =
+            stats[b.id].rating - stats[a.id].rating;
+
+          if (ratingDiff !== 0) return ratingDiff;
+
+          return stats[b.id].reviews - stats[a.id].reviews;
+        })
+        .slice(0, 5),
+    [stats]
+  );
+
+  const latestReviews = reviews
+    .filter((review) =>
+      games.some((game) => game.id === review.game_id)
+    )
+    .slice(0, 3);
 
   return (
     <main className="container-site pb-24 text-[#384b61]">
@@ -107,10 +220,9 @@ export default function Home() {
             <GameCard key={game.id} game={game} />
           ))}
         </div>
-
       </section>
 
-      {/* 평점과 리뷰 */}
+      {/* 평점과 실제 회원 리뷰 */}
       <section className="mt-20 grid gap-10 lg:grid-cols-2">
         <div>
           <h2 className="font-hand mb-6 text-4xl">
@@ -119,26 +231,40 @@ export default function Home() {
           </h2>
 
           <div className="overflow-hidden rounded-2xl border border-[#e2e6eb] bg-white">
-            {top.slice(0, 5).map((game, index) => (
-              <Link
-                key={game.id}
-                href={`/games/${game.id}`}
-                className="flex items-center gap-4 border-b border-[#edf0f3] p-4 transition last:border-0 hover:bg-[#f3f6fa]"
-              >
-                <span className="w-7 text-sm font-bold text-[#a1adbc]">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="text-3xl">{game.icon}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold">{game.title}</p>
-                  <p className="text-xs text-[#8995a5]">{game.genre}</p>
-                </div>
-                <span className="flex items-center gap-1 font-bold text-[#d9a43d]">
-                  <Star size={15} fill="currentColor" />
-                  {game.rating.toFixed(1)}
-                </span>
-              </Link>
-            ))}
+            {top.length > 0 ? (
+              top.map((game, index) => (
+                <Link
+                  key={game.id}
+                  href={`/games/${game.id}`}
+                  className="flex items-center gap-4 border-b border-[#edf0f3] p-4 transition last:border-0 hover:bg-[#f3f6fa]"
+                >
+                  <span className="w-7 text-sm font-bold text-[#a1adbc]">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-3xl">{game.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold">
+                      {game.title}
+                    </p>
+                    <p className="text-xs text-[#8995a5]">
+                      {game.genre}
+                    </p>
+                  </div>
+                  <span className="flex items-center gap-1 font-bold text-[#d9a43d]">
+                    <Star size={15} fill="currentColor" />
+                    {stats[game.id].rating.toFixed(1)}
+                  </span>
+                </Link>
+              ))
+            ) : (
+              <div className="p-8 text-center text-sm text-[#8995a5]">
+                {loading
+                  ? "실제 평점을 불러오는 중..."
+                  : error
+                    ? "평점 정보를 불러오지 못했습니다."
+                    : "아직 평가된 게임이 없습니다."}
+              </div>
+            )}
           </div>
         </div>
 
@@ -149,27 +275,55 @@ export default function Home() {
           </h2>
 
           <div className="space-y-3">
-            {recentReviews.map((review, index) => (
-              <div
-                key={`${review.user}-${index}`}
-                className="rounded-2xl border border-[#e2e6eb] bg-white p-5 shadow-sm"
-              >
-                <div className="flex justify-between gap-3">
-                  <span className="text-sm font-bold">{review.game}</span>
-                  <span className="flex items-center gap-1 text-sm font-bold text-[#d9a43d]">
-                    <Star size={14} fill="currentColor" />
-                    {review.score.toFixed(1)}
-                  </span>
-                </div>
+            {latestReviews.length > 0 ? (
+              latestReviews.map((review) => {
+                const game = games.find(
+                  (item) => item.id === review.game_id
+                );
 
-                <p className="mt-3 text-sm leading-7 text-[#66768b]">
-                  “{review.text}”
-                </p>
-                <p className="mt-3 text-xs text-[#a1adbc]">
-                  {review.user} · {review.time}
-                </p>
+                return (
+                  <Link
+                    key={review.id}
+                    href={`/games/${review.game_id}`}
+                    className="block rounded-2xl border border-[#e2e6eb] bg-white p-5 shadow-sm transition hover:bg-[#f8fafc]"
+                  >
+                    <div className="flex justify-between gap-3">
+                      <span className="text-sm font-bold">
+                        {game?.title ?? "게임"}
+                      </span>
+                      <span className="flex items-center gap-1 text-sm font-bold text-[#d9a43d]">
+                        <Star size={14} fill="currentColor" />
+                        {review.score.toFixed(1)}
+                      </span>
+                    </div>
+
+                    <p className="mt-2 text-xs font-semibold text-[#6686b5]">
+                      {review.title}
+                    </p>
+
+                    <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-sm leading-7 text-[#66768b]">
+                      “{review.body}”
+                    </p>
+
+                    <p className="mt-3 text-xs text-[#a1adbc]">
+                      회원 {review.user_id.slice(0, 8)}
+                      {" · "}
+                      {new Date(
+                        review.created_at
+                      ).toLocaleDateString("ko-KR")}
+                    </p>
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-[#e2e6eb] bg-white p-8 text-center text-sm text-[#8995a5]">
+                {loading
+                  ? "회원 리뷰를 불러오는 중..."
+                  : error
+                    ? "리뷰를 불러오지 못했습니다."
+                    : "아직 작성된 리뷰가 없습니다. 첫 리뷰를 남겨보세요!"}
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
