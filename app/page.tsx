@@ -43,11 +43,11 @@ const categories = [
   {
     title: "성장일기",
     description: "우리 거북이의 소중한 기록",
-    details: "사진 · 체중 · 성장 기록",
+    details: "거북이 등록 · 체중 · 등갑 길이 · 성장 그래프",
     icon: NotebookPen,
     background: "#f8ebed",
     color: "#b27d8b",
-    href: "",
+    href: "/growth",
   },
 ];
 
@@ -110,8 +110,15 @@ export default function HomePage() {
           {categories.map((category) => {
             const Icon = category.icon;
 
-            const cardContent = (
-              <>
+            return (
+              <Link
+                key={category.title}
+                href={category.href}
+                className="flex min-h-[230px] flex-col rounded-[24px] border border-white/80 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                style={{
+                  backgroundColor: category.background,
+                }}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div
                     className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/75"
@@ -120,16 +127,10 @@ export default function HomePage() {
                     <Icon size={30} strokeWidth={1.7} />
                   </div>
 
-                  {category.href ? (
-                    <ArrowRight
-                      size={22}
-                      style={{ color: category.color }}
-                    />
-                  ) : (
-                    <span className="rounded-full bg-white/75 px-3 py-1 text-xs font-semibold text-[#8b9989]">
-                      준비 중
-                    </span>
-                  )}
+                  <ArrowRight
+                    size={22}
+                    style={{ color: category.color }}
+                  />
                 </div>
 
                 <div className="mt-8">
@@ -145,30 +146,7 @@ export default function HomePage() {
                     {category.details}
                   </p>
                 </div>
-              </>
-            );
-
-            if (category.href) {
-              return (
-                <Link
-                  key={category.title}
-                  href={category.href}
-                  className="flex min-h-[230px] flex-col rounded-[24px] border border-white/80 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                  style={{ backgroundColor: category.background }}
-                >
-                  {cardContent}
-                </Link>
-              );
-            }
-
-            return (
-              <div
-                key={category.title}
-                className="flex min-h-[230px] flex-col rounded-[24px] border border-white/80 p-6 shadow-sm"
-                style={{ backgroundColor: category.background }}
-              >
-                {cardContent}
-              </div>
+              </Link>
             );
           })}
         </div>
