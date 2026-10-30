@@ -25,11 +25,11 @@ const categories = [
   {
     title: "거북이 도감",
     description: "다양한 육지거북 친구들을 만나보세요",
-    details: "호스필드 · 헤르만 · 설카타 · 레오파드",
+    details: "호스필드 · 헤르만 · 설카타 · 별거북 외 13종",
     icon: Turtle,
     background: "#f8f0df",
     color: "#a18558",
-    href: "",
+    href: "/species",
   },
   {
     title: "커뮤니티",
