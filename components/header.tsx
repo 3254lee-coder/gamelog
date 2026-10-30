@@ -9,6 +9,7 @@ import AuthStatus from "./auth-status";
 
 const nav = [
   { href: "/", label: "홈" },
+  { href: "/guide", label: "사육 가이드" },
 ];
 
 export default function Header() {
