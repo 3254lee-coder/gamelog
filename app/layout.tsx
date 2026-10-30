@@ -1,6 +1,8 @@
 
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Header from "@/components/header";
+import MobileNav from "@/components/mobile-nav";
 import "./globals.css";
 
 const siteUrl = "https://like-turtle.vercel.app";
@@ -71,21 +73,25 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <html lang="ko">
-      <body>
+      <body className="min-w-0 overflow-x-hidden">
         <Header />
 
         {children}
 
-        <footer className="mt-24 border-t border-[#e5ebdf] py-9">
+        <footer className="mt-24 border-t border-[#e5ebdf] py-9 max-md:mb-20">
           <div className="container-site flex flex-col justify-between gap-2 text-xs text-[#829482] sm:flex-row">
-            <span>© 2026 LIKE TURTLE · 거북이처럼</span>
+            <span>
+              © 2026 LIKE TURTLE · 거북이처럼
+            </span>
             <span>조금 느리면 어때</span>
           </div>
         </footer>
+
+        <MobileNav />
       </body>
     </html>
   );
