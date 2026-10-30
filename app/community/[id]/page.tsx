@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import {
@@ -17,10 +17,12 @@ import {
   Turtle,
 } from "lucide-react";
 
+type Category = "free" | "tips" | "question";
+
 type Post = {
   id: string;
   author_id: string;
-  category: "free" | "tips" | "question";
+  category: Category;
   title: string;
   content: string;
   created_at: string;
@@ -37,7 +39,7 @@ type Comment = {
   updated_at: string;
 };
 
-const categoryNames = {
+const categoryNames: Record<Category, string> = {
   free: "자유게시판",
   tips: "정보 및 TIP 공유하기",
   question: "질문",
@@ -68,6 +70,7 @@ function getNickname(user: User) {
 
 export default function CommunityPostPage() {
   const params = useParams();
+  const router = useRouter();
   const postId = params.id as string;
   const supabase = getSupabase();
 
@@ -77,13 +80,21 @@ export default function CommunityPostPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const [editingPost, setEditingPost] = useState(false);
+  const [postCategory, setPostCategory] =
+    useState<Category>("free");
+  const [postTitle, setPostTitle] = useState("");
+  const [postContent, setPostContent] = useState("");
 
   const [commentText, setCommentText] = useState("");
-  const [saving, setSaving] = useState(false);
   const [commentError, setCommentError] = useState("");
-
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState("");
+  const [editingCommentId, setEditingCommentId] =
+    useState<string | null>(null);
+  const [editingCommentText, setEditingCommentText] =
+    useState("");
 
   useEffect(() => {
     if (!supabase || !postId) {
@@ -125,7 +136,11 @@ export default function CommunityPostPage() {
       } else if (!postResult.data) {
         setError("존재하지 않거나 삭제된 게시글입니다.");
       } else {
-        setPost(postResult.data as Post);
+        const loadedPost = postResult.data as Post;
+        setPost(loadedPost);
+        setPostCategory(loadedPost.category);
+        setPostTitle(loadedPost.title);
+        setPostContent(loadedPost.content);
       }
 
       if (commentResult.error) {
@@ -152,6 +167,15 @@ export default function CommunityPostPage() {
     };
   }, [postId, supabase]);
 
+  async function verifyOwner(authorId: string) {
+    if (!supabase) return false;
+
+    const { data, error: authError } =
+      await supabase.auth.getUser();
+
+    return !authError && data.user?.id === authorId;
+  }
+
   async function refreshComments() {
     if (!supabase) return;
 
@@ -164,16 +188,116 @@ export default function CommunityPostPage() {
       .order("created_at", { ascending: true });
 
     if (fetchError) {
-      setCommentError("댓글 목록을 새로고침하지 못했습니다.");
+      setCommentError("댓글 목록을 불러오지 못했습니다.");
       return;
     }
 
     setComments((data ?? []) as Comment[]);
   }
 
-  async function submitComment(event: React.FormEvent<HTMLFormElement>) {
+  function startPostEdit() {
+    if (!post || !user || post.author_id !== user.id) return;
+
+    setPostCategory(post.category);
+    setPostTitle(post.title);
+    setPostContent(post.content);
+    setActionError("");
+    setEditingPost(true);
+  }
+
+  async function savePostEdit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setCommentError("");
+
+    if (!supabase || !post || !user) return;
+
+    const title = postTitle.trim();
+    const content = postContent.trim();
+
+    if (title.length < 2 || title.length > 100) {
+      setActionError("제목은 2~100자로 입력해 주세요.");
+      return;
+    }
+
+    if (content.length < 1 || content.length > 20000) {
+      setActionError("내용은 1~20,000자로 입력해 주세요.");
+      return;
+    }
+
+    setSaving(true);
+    setActionError("");
+
+    if (!(await verifyOwner(post.author_id))) {
+      setSaving(false);
+      setActionError("게시글 수정 권한이 없습니다.");
+      return;
+    }
+
+    const { data, error: updateError } = await supabase
+      .from("tortoise_posts")
+      .update({
+        category: postCategory,
+        title,
+        content,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", post.id)
+      .eq("author_id", post.author_id)
+      .select(
+        "id, author_id, category, title, content, created_at, updated_at"
+      )
+      .single();
+
+    setSaving(false);
+
+    if (updateError || !data) {
+      setActionError("게시글 수정에 실패했습니다.");
+      return;
+    }
+
+    setPost(data as Post);
+    setEditingPost(false);
+  }
+
+  async function deletePost() {
+    if (!supabase || !post || !user) return;
+
+    if (!window.confirm(
+      "게시글을 삭제하면 댓글도 함께 삭제됩니다. 정말 삭제하시겠습니까?"
+    )) {
+      return;
+    }
+
+    setSaving(true);
+    setActionError("");
+
+    if (!(await verifyOwner(post.author_id))) {
+      setSaving(false);
+      setActionError("게시글 삭제 권한이 없습니다.");
+      return;
+    }
+
+    const { data, error: deleteError } = await supabase
+      .from("tortoise_posts")
+      .delete()
+      .eq("id", post.id)
+      .eq("author_id", post.author_id)
+      .select("id");
+
+    setSaving(false);
+
+    if (deleteError || !data?.length) {
+      setActionError("게시글 삭제에 실패했습니다.");
+      return;
+    }
+
+    router.push("/community");
+    router.refresh();
+  }
+
+  async function submitComment(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
 
     if (!supabase) return;
 
@@ -185,6 +309,7 @@ export default function CommunityPostPage() {
     }
 
     setSaving(true);
+    setCommentError("");
 
     const { data: authData, error: authError } =
       await supabase.auth.getUser();
@@ -196,23 +321,19 @@ export default function CommunityPostPage() {
       return;
     }
 
-    const currentUser = authData.user;
-
     const { error: insertError } = await supabase
       .from("tortoise_comments")
       .insert({
         post_id: postId,
-        author_id: currentUser.id,
-        nickname: getNickname(currentUser),
+        author_id: authData.user.id,
+        nickname: getNickname(authData.user),
         content: text,
       });
 
     setSaving(false);
 
     if (insertError) {
-      setCommentError(
-        "댓글 저장에 실패했습니다. 잠시 후 다시 시도해 주세요."
-      );
+      setCommentError("댓글 저장에 실패했습니다.");
       return;
     }
 
@@ -220,10 +341,10 @@ export default function CommunityPostPage() {
     await refreshComments();
   }
 
-  async function saveEdit(comment: Comment) {
-    if (!supabase || !user || comment.author_id !== user.id) return;
+  async function saveCommentEdit(comment: Comment) {
+    if (!supabase || !user || !comment.author_id) return;
 
-    const text = editingText.trim();
+    const text = editingCommentText.trim();
 
     if (!text || text.length > 2000) {
       setCommentError("댓글은 1~2,000자로 입력해 주세요.");
@@ -233,11 +354,9 @@ export default function CommunityPostPage() {
     setSaving(true);
     setCommentError("");
 
-    const { data: authData } = await supabase.auth.getUser();
-
-    if (!authData.user || authData.user.id !== comment.author_id) {
+    if (!(await verifyOwner(comment.author_id))) {
       setSaving(false);
-      setCommentError("댓글 수정 권한을 확인할 수 없습니다.");
+      setCommentError("댓글 수정 권한이 없습니다.");
       return;
     }
 
@@ -248,7 +367,7 @@ export default function CommunityPostPage() {
         updated_at: new Date().toISOString(),
       })
       .eq("id", comment.id)
-      .eq("author_id", authData.user.id);
+      .eq("author_id", comment.author_id);
 
     setSaving(false);
 
@@ -257,42 +376,46 @@ export default function CommunityPostPage() {
       return;
     }
 
-    setEditingId(null);
-    setEditingText("");
+    setEditingCommentId(null);
+    setEditingCommentText("");
     await refreshComments();
   }
 
   async function deleteComment(comment: Comment) {
-    if (!supabase || !user || comment.author_id !== user.id) return;
+    if (!supabase || !user || !comment.author_id) return;
 
-    if (!window.confirm("이 댓글을 삭제하시겠습니까?")) return;
+    if (!window.confirm("이 댓글을 삭제하시겠습니까?")) {
+      return;
+    }
 
     setSaving(true);
     setCommentError("");
 
-    const { data: authData } = await supabase.auth.getUser();
-
-    if (!authData.user || authData.user.id !== comment.author_id) {
+    if (!(await verifyOwner(comment.author_id))) {
       setSaving(false);
-      setCommentError("댓글 삭제 권한을 확인할 수 없습니다.");
+      setCommentError("댓글 삭제 권한이 없습니다.");
       return;
     }
 
-    const { error: deleteError } = await supabase
+    const { data, error: deleteError } = await supabase
       .from("tortoise_comments")
       .delete()
       .eq("id", comment.id)
-      .eq("author_id", authData.user.id);
+      .eq("author_id", comment.author_id)
+      .select("id");
 
     setSaving(false);
 
-    if (deleteError) {
+    if (deleteError || !data?.length) {
       setCommentError("댓글 삭제에 실패했습니다.");
       return;
     }
 
     await refreshComments();
   }
+
+  const isPostOwner =
+    !!post && !!user && post.author_id === user.id;
 
   return (
     <main className="container-site min-h-screen pb-24 pt-9 text-[#405a46]">
@@ -310,38 +433,185 @@ export default function CommunityPostPage() {
         </div>
       ) : error || !post ? (
         <section className="mt-8 rounded-[24px] bg-white p-12 text-center">
-          <Turtle size={42} className="mx-auto text-[#9db69d]" />
+          <Turtle
+            size={42}
+            className="mx-auto text-[#9db69d]"
+          />
           <h1 className="font-hand mt-5 text-3xl">
             게시글을 찾을 수 없어요
           </h1>
-          <p className="mt-4 text-sm text-[#819482]">{error}</p>
+          <p className="mt-4 text-sm text-[#819482]">
+            {error}
+          </p>
         </section>
       ) : (
         <>
           <article className="mt-8 overflow-hidden rounded-[24px] border border-[#e3e9df] bg-white shadow-sm">
             <header className="border-b border-[#edf0e9] bg-[#f5f9f2] px-6 py-9 md:px-10">
-              <span className="rounded-full bg-[#e4efdf] px-4 py-2 text-xs font-bold text-[#62866a]">
-                {categoryNames[post.category]}
-              </span>
+              {editingPost ? (
+                <form onSubmit={savePostEdit} className="space-y-5">
+                  <h1 className="font-hand text-3xl">
+                    게시글 수정
+                  </h1>
 
-              <h1 className="font-hand mt-6 break-words text-3xl md:text-4xl">
-                {post.title}
-              </h1>
+                  <div>
+                    <label
+                      htmlFor="edit-category"
+                      className="mb-2 block text-sm font-bold"
+                    >
+                      게시판
+                    </label>
+                    <select
+                      id="edit-category"
+                      value={postCategory}
+                      onChange={(event) =>
+                        setPostCategory(
+                          event.target.value as Category
+                        )
+                      }
+                      className="w-full rounded-xl border border-[#dce7d8] bg-white p-3 text-sm"
+                    >
+                      <option value="free">자유게시판</option>
+                      <option value="tips">
+                        정보 및 TIP 공유하기
+                      </option>
+                      <option value="question">질문</option>
+                    </select>
+                  </div>
 
-              <div className="mt-5 flex items-center gap-2 text-xs text-[#829482]">
-                <CalendarDays size={15} />
-                {formatDate(post.created_at)}
-              </div>
+                  <div>
+                    <label
+                      htmlFor="edit-title"
+                      className="mb-2 block text-sm font-bold"
+                    >
+                      제목
+                    </label>
+                    <input
+                      id="edit-title"
+                      value={postTitle}
+                      onChange={(event) =>
+                        setPostTitle(event.target.value)
+                      }
+                      maxLength={100}
+                      required
+                      className="w-full rounded-xl border border-[#dce7d8] bg-white p-3 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="edit-content"
+                      className="mb-2 block text-sm font-bold"
+                    >
+                      내용
+                    </label>
+                    <textarea
+                      id="edit-content"
+                      value={postContent}
+                      onChange={(event) =>
+                        setPostContent(event.target.value)
+                      }
+                      maxLength={20000}
+                      rows={12}
+                      required
+                      className="w-full rounded-xl border border-[#dce7d8] bg-white p-4 text-sm leading-7"
+                    />
+                  </div>
+
+                  {actionError && (
+                    <p role="alert" className="text-sm text-red-600">
+                      {actionError}
+                    </p>
+                  )}
+
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => {
+                        setEditingPost(false);
+                        setActionError("");
+                      }}
+                      className="rounded-full border border-[#dce7d8] bg-white px-6 py-3 text-sm"
+                    >
+                      취소
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="rounded-full bg-[#668b6c] px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
+                    >
+                      {saving ? "저장 중..." : "수정 완료"}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <span className="inline-flex rounded-full bg-[#e4efdf] px-4 py-2 text-xs font-bold text-[#62866a]">
+                    {categoryNames[post.category]}
+                  </span>
+
+                  <h1 className="font-hand mt-6 break-words text-3xl md:text-4xl">
+                    {post.title}
+                  </h1>
+
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 text-xs text-[#829482]">
+                      <CalendarDays size={15} />
+                      {formatDate(post.created_at)}
+                    </div>
+
+                    {isPostOwner && (
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={startPostEdit}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[#668b6c]"
+                        >
+                          <Pencil size={15} />
+                          수정
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={deletePost}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-red-500"
+                        >
+                          <Trash2 size={15} />
+                          삭제
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {actionError && (
+                    <p
+                      role="alert"
+                      className="mt-4 text-sm text-red-600"
+                    >
+                      {actionError}
+                    </p>
+                  )}
+                </>
+              )}
             </header>
 
-            <div className="min-h-[250px] whitespace-pre-wrap break-words px-6 py-10 text-sm leading-8 md:px-10 md:text-base">
-              {post.content}
-            </div>
+            {!editingPost && (
+              <div className="min-h-[250px] whitespace-pre-wrap break-words px-6 py-10 text-sm leading-8 md:px-10 md:text-base">
+                {post.content}
+              </div>
+            )}
           </article>
 
           <section className="mt-8 rounded-[24px] border border-[#e3e9df] bg-white px-6 py-9 md:px-10">
             <div className="flex items-center gap-2">
-              <MessageCircle size={23} className="text-[#719273]" />
+              <MessageCircle
+                size={23}
+                className="text-[#719273]"
+              />
               <h2 className="font-hand text-2xl">
                 댓글 {comments.length}
               </h2>
@@ -384,8 +654,10 @@ export default function CommunityPostPage() {
                               type="button"
                               disabled={saving}
                               onClick={() => {
-                                setEditingId(comment.id);
-                                setEditingText(comment.content);
+                                setEditingCommentId(comment.id);
+                                setEditingCommentText(
+                                  comment.content
+                                );
                               }}
                               className="inline-flex items-center gap-1 text-xs text-[#668b6c]"
                             >
@@ -406,22 +678,26 @@ export default function CommunityPostPage() {
                         )}
                       </div>
 
-                      {editingId === comment.id ? (
+                      {editingCommentId === comment.id ? (
                         <div className="mt-4">
                           <textarea
-                            value={editingText}
+                            value={editingCommentText}
                             onChange={(event) =>
-                              setEditingText(event.target.value)
+                              setEditingCommentText(
+                                event.target.value
+                              )
                             }
                             maxLength={2000}
                             rows={4}
-                            className="w-full rounded-xl border border-[#dce7d8] p-4 text-sm outline-none"
+                            className="w-full rounded-xl border border-[#dce7d8] p-4 text-sm"
                           />
 
                           <div className="mt-3 flex justify-end gap-3">
                             <button
                               type="button"
-                              onClick={() => setEditingId(null)}
+                              onClick={() =>
+                                setEditingCommentId(null)
+                              }
                               className="rounded-full border px-5 py-2 text-xs"
                             >
                               취소
@@ -430,7 +706,9 @@ export default function CommunityPostPage() {
                             <button
                               type="button"
                               disabled={saving}
-                              onClick={() => saveEdit(comment)}
+                              onClick={() =>
+                                saveCommentEdit(comment)
+                              }
                               className="rounded-full bg-[#668b6c] px-5 py-2 text-xs font-bold text-white disabled:opacity-50"
                             >
                               수정 완료
@@ -463,7 +741,7 @@ export default function CommunityPostPage() {
                     maxLength={2000}
                     rows={4}
                     placeholder="따뜻한 댓글을 남겨주세요."
-                    className="w-full rounded-xl border border-[#dce7d8] p-4 text-sm leading-7 outline-none focus:border-[#8cad8c]"
+                    className="w-full rounded-xl border border-[#dce7d8] p-4 text-sm leading-7"
                     required
                   />
 
