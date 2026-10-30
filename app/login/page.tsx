@@ -1,36 +1,51 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight,
-  Gamepad2,
-  Mail,
+  Heart,
   LockKeyhole,
+  Mail,
   Sparkles,
-  Star,
+  Turtle,
+  UserRound,
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
+
+type Mode = "login" | "signup";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [nickname, setNickname] = useState("");
+  const [mode, setMode] = useState<Mode>("login");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   const router = useRouter();
   const isLogin = mode === "login";
 
-  async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
     const db = getSupabase();
 
     if (!db) {
-      setMessage("Supabase 환경 변수가 설정되지 않았습니다.");
+      setMessage("Supabase 연결 설정을 확인해 주세요.");
+      return;
+    }
+
+    const cleanEmail = email.trim();
+    const cleanNickname = nickname.trim();
+
+    if (!isLogin && (
+      cleanNickname.length < 2 ||
+      cleanNickname.length > 20
+    )) {
+      setMessage("닉네임은 2~20자로 입력해 주세요.");
       return;
     }
 
@@ -38,31 +53,92 @@ export default function LoginPage() {
     setMessage("");
 
     try {
-      const { data, error } =
-        mode === "signup"
-          ? await db.auth.signUp({
-              email,
-              password,
-              options: {
-                emailRedirectTo: window.location.origin + "/login",
-              },
-            })
-          : await db.auth.signInWithPassword({
-              email,
-              password,
-            });
+      if (mode === "signup") {
+        const { data, error } = await db.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            emailRedirectTo:
+              window.location.origin + "/login",
+            data: {
+              nickname: cleanNickname,
+              display_name: cleanNickname,
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        if (data.session) {
+          router.push("/my");
+          router.refresh();
+        } else {
+          setMessage(
+            "회원가입 요청이 완료되었습니다. 이메일 인증이 필요한 경우 받은 메일을 확인해 주세요."
+          );
+        }
+      } else {
+        const { data, error } =
+          await db.auth.signInWithPassword({
+            email: cleanEmail,
+            password,
+          });
+
+        if (error) throw error;
+
+        if (data.session) {
+          router.push("/my");
+          router.refresh();
+        }
+      }
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resetPassword() {
+    const db = getSupabase();
+
+    if (!db) {
+      setMessage("Supabase 연결 설정을 확인해 주세요.");
+      return;
+    }
+
+    if (!email.trim()) {
+      setMessage(
+        "비밀번호를 재설정할 이메일 주소를 먼저 입력해 주세요."
+      );
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const { error } = await db.auth.resetPasswordForEmail(
+        email.trim(),
+        {
+          redirectTo:
+            window.location.origin + "/login",
+        }
+      );
 
       if (error) throw error;
 
-      if (data.session) {
-        router.push("/account");
-        router.refresh();
-      } else {
-        setMessage("인증 메일을 확인한 후 로그인해 주세요.");
-      }
-    } catch (e) {
       setMessage(
-        e instanceof Error ? e.message : "요청에 실패했습니다."
+        "비밀번호 재설정 메일을 요청했습니다. 받은편지함을 확인해 주세요."
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "비밀번호 재설정 요청에 실패했습니다."
       );
     } finally {
       setBusy(false);
@@ -75,45 +151,47 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container-site min-h-[75vh] pb-24 pt-14 text-[#384b61]">
+    <main className="container-site min-h-[75vh] pb-24 pt-14 text-[#405a46]">
       <div className="mx-auto max-w-md">
         <div className="relative mb-9 text-center">
-          <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-[26px] bg-[#e8edf4] text-[#6686b5]">
-            <Gamepad2 size={42} strokeWidth={1.5} />
+          <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-[26px] bg-[#e8f1e2] text-[#668b6c]">
+            <Turtle size={45} strokeWidth={1.5} />
 
             <Sparkles
               size={22}
-              className="absolute -right-5 -top-2 text-[#e7b94c]"
+              className="absolute -right-5 -top-2 text-[#b7a16e]"
             />
 
-            <Star
+            <Heart
               size={20}
-              className="absolute -bottom-2 -left-5 text-[#e7b94c]"
+              className="absolute -bottom-2 -left-5 text-[#d9a1a9]"
             />
           </div>
 
-          <p className="mt-7 text-xs font-bold tracking-[.2em] text-[#6686b5]">
-            {isLogin ? "WELCOME BACK" : "JOIN GAMELOG"}
+          <p className="mt-7 text-xs font-bold tracking-[0.2em] text-[#739578]">
+            {isLogin
+              ? "WELCOME BACK TO LIKE TURTLE"
+              : "JOIN LIKE TURTLE"}
           </p>
 
           <h1 className="font-hand mt-3 text-3xl md:text-4xl">
             {isLogin
               ? "다시 만나서 반가워요!"
-              : "함께 게임을 기록해요!"}
+              : "거북이처럼, 함께해요!"}
           </h1>
 
-          <p className="mt-4 text-sm leading-7 text-[#8493a6]">
+          <p className="mt-4 text-sm leading-7 text-[#829482]">
             {isLogin ? (
               <>
-                당신의 게임 이야기를 이어가세요.
+                우리 거북이의 소중한 이야기를
                 <br />
-                GAMELOG가 기다리고 있었어요.
+                오늘도 함께 나눠보세요.
               </>
             ) : (
               <>
-                좋아하는 게임을 발견하고,
+                조금 느리면 어때.
                 <br />
-                나만의 리뷰와 추억을 남겨보세요.
+                거북이와 함께하는 따뜻한 공간에 오신 걸 환영해요.
               </>
             )}
           </p>
@@ -121,12 +199,41 @@ export default function LoginPage() {
 
         <form
           onSubmit={submit}
-          className="rounded-[28px] border border-[#e2e6eb] bg-white p-7 shadow-sm md:p-9"
+          className="rounded-[28px] border border-[#e3e9df] bg-white p-7 shadow-sm md:p-9"
         >
           <div className="space-y-5">
+            {!isLogin && (
+              <label className="block">
+                <span className="mb-2 flex items-center gap-2 text-sm font-bold">
+                  <UserRound
+                    size={17}
+                    className="text-[#668b6c]"
+                  />
+                  닉네임
+                </span>
+
+                <input
+                  required
+                  type="text"
+                  minLength={2}
+                  maxLength={20}
+                  autoComplete="nickname"
+                  value={nickname}
+                  onChange={(event) =>
+                    setNickname(event.target.value)
+                  }
+                  placeholder="2~20자 닉네임"
+                  className="w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-sm outline-none focus:border-[#668b6c]"
+                />
+              </label>
+            )}
+
             <label className="block">
               <span className="mb-2 flex items-center gap-2 text-sm font-bold">
-                <Mail size={17} className="text-[#6686b5]" />
+                <Mail
+                  size={17}
+                  className="text-[#668b6c]"
+                />
                 이메일
               </span>
 
@@ -135,9 +242,11 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) =>
+                  setEmail(event.target.value)
+                }
                 placeholder="이메일 주소를 입력하세요"
-                className="w-full rounded-xl border border-[#e2e6eb] bg-[#f8fafc] px-4 py-3.5 text-sm text-[#384b61] outline-none transition placeholder:text-[#a1adbc] focus:border-[#6686b5] focus:ring-2 focus:ring-[#6686b5]/15"
+                className="w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-sm outline-none focus:border-[#668b6c]"
               />
             </label>
 
@@ -145,7 +254,7 @@ export default function LoginPage() {
               <span className="mb-2 flex items-center gap-2 text-sm font-bold">
                 <LockKeyhole
                   size={17}
-                  className="text-[#6686b5]"
+                  className="text-[#668b6c]"
                 />
                 비밀번호
               </span>
@@ -155,24 +264,41 @@ export default function LoginPage() {
                 minLength={6}
                 type="password"
                 autoComplete={
-                  isLogin ? "current-password" : "new-password"
+                  isLogin
+                    ? "current-password"
+                    : "new-password"
                 }
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
                 placeholder={
                   isLogin
                     ? "비밀번호를 입력하세요"
                     : "6자 이상 입력하세요"
                 }
-                className="w-full rounded-xl border border-[#e2e6eb] bg-[#f8fafc] px-4 py-3.5 text-sm text-[#384b61] outline-none transition placeholder:text-[#a1adbc] focus:border-[#6686b5] focus:ring-2 focus:ring-[#6686b5]/15"
+                className="w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-sm outline-none focus:border-[#668b6c]"
               />
             </label>
           </div>
 
+          {isLogin && (
+            <div className="mt-3 text-right">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={resetPassword}
+                className="text-xs font-semibold text-[#739578] hover:underline disabled:opacity-50"
+              >
+                비밀번호를 잊으셨나요?
+              </button>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={busy}
-            className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6686b5] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#5576a5] disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-[#668b6c] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#527558] disabled:opacity-50"
           >
             {busy
               ? "처리 중..."
@@ -187,35 +313,37 @@ export default function LoginPage() {
             <p
               role="status"
               aria-live="polite"
-              className="mt-5 rounded-xl bg-[#f3f6fa] p-4 text-sm leading-6 text-[#6686b5]"
+              className="mt-5 rounded-xl bg-[#edf5e8] p-4 text-sm leading-6 text-[#608566]"
             >
               {message}
             </p>
           )}
 
-          <div className="mt-7 border-t border-[#edf0f3] pt-6 text-center">
-            <p className="text-sm text-[#8493a6]">
+          <div className="mt-7 border-t border-[#edf0e9] pt-6 text-center">
+            <p className="text-sm text-[#829482]">
               {isLogin
-                ? "아직 GAMELOG 계정이 없나요?"
-                : "이미 GAMELOG 계정이 있나요?"}
+                ? "아직 거북이처럼 계정이 없나요?"
+                : "이미 거북이처럼 계정이 있나요?"}
             </p>
 
             <button
               type="button"
               onClick={switchMode}
-              className="mt-2 text-sm font-bold text-[#6686b5] transition hover:underline"
+              className="mt-2 text-sm font-bold text-[#668b6c] hover:underline"
             >
-              {isLogin ? "회원가입하기" : "로그인하기"}
+              {isLogin
+                ? "회원가입하기"
+                : "로그인하기"}
             </button>
           </div>
         </form>
 
         <div className="mt-8 text-center">
           <Link
-            href="/games"
-            className="inline-flex items-center gap-2 text-sm text-[#8493a6] transition hover:text-[#6686b5]"
+            href="/community"
+            className="inline-flex items-center gap-2 text-sm text-[#829482] hover:text-[#668b6c]"
           >
-            로그인 없이 게임 둘러보기
+            로그인 없이 커뮤니티 둘러보기
             <ArrowRight size={16} />
           </Link>
         </div>
