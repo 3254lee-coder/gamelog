@@ -140,7 +140,7 @@ function PhotoPicker({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-semibold">사진 (선택)</p>
+      <p className="min-w-0 text-sm font-semibold">사진 (선택)</p>
 
       {visibleUrl && (
         <div className="overflow-hidden rounded-2xl bg-[#edf5e8]">
@@ -148,13 +148,13 @@ function PhotoPicker({
           <img
             src={visibleUrl}
             alt="선택한 사진 미리보기"
-            className="max-h-72 w-full object-contain"
+            className="max-h-56 w-full object-contain sm:max-h-72"
           />
         </div>
       )}
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#dce7d8] bg-white px-4 py-3 text-sm font-bold text-[#668b6c]">
+        <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dce7d8] bg-white px-4 py-3 text-sm font-bold text-[#668b6c]">
           <ImagePlus size={18} />
           사진 선택
           <input
@@ -172,7 +172,7 @@ function PhotoPicker({
               onFile(null);
               onRemoveChange(true);
             }}
-            className="text-sm text-[#b56b6b]"
+            className="inline-flex min-h-11 items-center px-2 text-sm text-[#b56b6b]"
           >
             사진 제거
           </button>
@@ -245,10 +245,10 @@ function GrowthChart({
   }));
 
   return (
-    <div>
+    <div className="min-w-0 overflow-x-auto">
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="w-full"
+        className="block h-auto min-w-[300px] w-full"
         role="img"
         aria-label={`${unit} 성장 그래프`}
       >
@@ -881,7 +881,7 @@ export default function GrowthPage() {
   }
 
   const inputClass =
-    "mt-2 w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3 text-sm outline-none focus:border-[#668b6c]";
+    "mt-2 block min-h-12 w-full min-w-0 max-w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-3 py-3 text-base outline-none focus:border-[#668b6c] sm:px-4 sm:text-sm";
 
   if (!ready) {
     return (
@@ -915,21 +915,21 @@ export default function GrowthPage() {
   }
 
   return (
-    <main className="container-site min-h-screen pb-24 pt-10 text-[#405a46]">
+    <main className="container-site min-h-screen min-w-0 pb-32 pt-5 text-[#405a46] sm:pt-10 md:pb-24">
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-sm text-[#829482]"
+        className="inline-flex min-h-10 items-center gap-2 text-sm text-[#829482]"
       >
         <ArrowLeft size={16} />
         홈으로
       </Link>
 
-      <div className="mt-7 flex flex-wrap items-center justify-between gap-4">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 sm:mt-7 sm:gap-4">
         <div>
           <p className="text-xs font-bold tracking-[0.16em] text-[#8ca18a]">
             MY TORTOISE DIARY
           </p>
-          <h1 className="mt-2 font-hand text-4xl">
+          <h1 className="mt-2 font-hand text-3xl leading-tight sm:text-4xl">
             우리 거북이 성장일기
           </h1>
           <p className="mt-3 text-sm text-[#829482]">
@@ -940,7 +940,7 @@ export default function GrowthPage() {
         <button
           type="button"
           onClick={newTortoise}
-          className="inline-flex items-center gap-2 rounded-full bg-[#668b6c] px-5 py-3 text-sm font-bold text-white"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#668b6c] px-5 py-3 text-sm font-bold text-white"
         >
           <Plus size={17} />
           거북이 등록
@@ -957,7 +957,7 @@ export default function GrowthPage() {
       )}
 
       {showTortoiseForm && (
-        <section className="mt-7 rounded-[24px] border border-[#dce7d8] bg-white p-6">
+        <section className="mt-6 min-w-0 rounded-[22px] border border-[#dce7d8] bg-white p-4 sm:mt-7 sm:rounded-[24px] sm:p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold">
               {editingTortoise
@@ -968,6 +968,7 @@ export default function GrowthPage() {
               type="button"
               onClick={() => setShowTortoiseForm(false)}
               aria-label="닫기"
+              className="flex h-11 w-11 items-center justify-center rounded-xl"
             >
               <X size={20} />
             </button>
@@ -975,9 +976,9 @@ export default function GrowthPage() {
 
           <form
             onSubmit={saveTortoise}
-            className="mt-5 grid gap-4 sm:grid-cols-2"
+            className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2"
           >
-            <label className="text-sm font-semibold">
+            <label className="min-w-0 text-sm font-semibold">
               이름 *
               <input
                 required
@@ -994,7 +995,7 @@ export default function GrowthPage() {
               />
             </label>
 
-            <label className="text-sm font-semibold">
+            <label className="min-w-0 text-sm font-semibold">
               종류
               <input
                 maxLength={100}
@@ -1010,7 +1011,7 @@ export default function GrowthPage() {
               />
             </label>
 
-            <label className="text-sm font-semibold">
+            <label className="min-w-0 text-sm font-semibold">
               생일
               <input
                 type="date"
@@ -1025,7 +1026,7 @@ export default function GrowthPage() {
               />
             </label>
 
-            <label className="text-sm font-semibold">
+            <label className="min-w-0 text-sm font-semibold">
               입양일
               <input
                 type="date"
@@ -1059,7 +1060,7 @@ export default function GrowthPage() {
             <button
               type="submit"
               disabled={busy}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#668b6c] px-6 py-3 text-sm font-bold text-white disabled:opacity-50 sm:col-span-2"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#668b6c] px-6 py-3 text-sm font-bold text-white disabled:opacity-50 sm:col-span-2"
             >
               <Save size={17} />
               {busy ? "저장 중..." : "거북이 정보 저장"}
@@ -1074,9 +1075,9 @@ export default function GrowthPage() {
         </p>
       )}
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="mt-6 grid min-w-0 gap-5 sm:mt-8 sm:gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="space-y-3">
-          <h2 className="mb-4 text-lg font-bold">
+          <h2 className="mb-3 text-lg font-bold sm:mb-4">
             나의 거북이 ({tortoises.length})
           </h2>
 
@@ -1088,6 +1089,7 @@ export default function GrowthPage() {
             </div>
           )}
 
+          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-3 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
           {tortoises.map((t) => (
             <button
               key={t.id}
@@ -1096,7 +1098,7 @@ export default function GrowthPage() {
                 setSelectedId(t.id);
                 setShowRecordForm(false);
               }}
-              className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left ${
+              className={`flex w-[185px] shrink-0 snap-start items-center gap-3 rounded-2xl border p-3 text-left transition sm:w-[215px] sm:p-4 lg:w-full ${
                 selectedId === t.id
                   ? "border-[#91b094] bg-[#edf5e8]"
                   : "border-[#e3e9df] bg-white"
@@ -1108,10 +1110,10 @@ export default function GrowthPage() {
                 <img
                   src={photoUrls[t.photo_path]}
                   alt={`${t.name} 프로필`}
-                  className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                  className="h-11 w-11 shrink-0 rounded-xl object-cover sm:h-12 sm:w-12"
                 />
               ) : (
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-[#668b6c]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#668b6c] sm:h-12 sm:w-12">
                   <Turtle size={27} />
                 </span>
               )}
@@ -1126,29 +1128,30 @@ export default function GrowthPage() {
               </span>
             </button>
           ))}
+          </div>
         </aside>
 
-        <div className="min-w-0 space-y-6">
+        <div className="min-w-0 space-y-5 sm:space-y-6">
           {selected ? (
             <>
-              <section className="overflow-hidden rounded-[24px] border border-[#e3e9df] bg-white">
+              <section className="min-w-0 overflow-hidden rounded-[22px] border border-[#e3e9df] bg-white sm:rounded-[24px]">
                 {selected.photo_path &&
                   photoUrls[selected.photo_path] && (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={photoUrls[selected.photo_path]}
                       alt={`${selected.name} 사진`}
-                      className="max-h-80 w-full bg-[#edf5e8] object-contain"
+                      className="max-h-60 w-full bg-[#edf5e8] object-contain sm:max-h-80"
                     />
                   )}
 
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-xs font-bold text-[#8ca18a]">
                         MY LITTLE FRIEND
                       </p>
-                      <h2 className="mt-2 font-hand text-3xl">
+                      <h2 className="mt-2 font-hand text-2xl sm:text-3xl">
                         {selected.name}
                       </h2>
                       <p className="mt-2 text-sm text-[#829482]">
@@ -1160,7 +1163,7 @@ export default function GrowthPage() {
                       <button
                         type="button"
                         onClick={() => editTortoise(selected)}
-                        className="rounded-xl border border-[#dce7d8] p-3 text-[#668b6c]"
+                        className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#dce7d8] text-[#668b6c]"
                         aria-label="거북이 수정"
                       >
                         <Pencil size={17} />
@@ -1169,7 +1172,7 @@ export default function GrowthPage() {
                         type="button"
                         onClick={() => deleteTortoise(selected)}
                         disabled={busy}
-                        className="rounded-xl border border-[#f0dddd] p-3 text-[#b56b6b]"
+                        className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#f0dddd] text-[#b56b6b]"
                         aria-label="거북이 삭제"
                       >
                         <Trash2 size={17} />
@@ -1192,7 +1195,7 @@ export default function GrowthPage() {
                 </div>
               </section>
 
-              <section className="rounded-[24px] border border-[#e3e9df] bg-white p-6">
+              <section className="min-w-0 rounded-[22px] border border-[#e3e9df] bg-white p-4 sm:rounded-[24px] sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="flex items-center gap-2 text-xl font-bold">
@@ -1207,7 +1210,7 @@ export default function GrowthPage() {
                   <button
                     type="button"
                     onClick={newRecord}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#668b6c] px-5 py-3 text-sm font-bold text-white"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#668b6c] px-5 py-3 text-sm font-bold text-white"
                   >
                     <Plus size={16} />
                     기록 추가
@@ -1217,9 +1220,9 @@ export default function GrowthPage() {
                 {showRecordForm && (
                   <form
                     onSubmit={saveRecord}
-                    className="mt-6 grid gap-4 rounded-2xl bg-[#f8faf6] p-5 sm:grid-cols-2"
+                    className="mt-5 grid min-w-0 gap-4 rounded-2xl bg-[#f8faf6] p-3 sm:mt-6 sm:grid-cols-2 sm:p-5"
                   >
-                    <label className="text-sm font-semibold">
+                    <label className="min-w-0 text-sm font-semibold">
                       측정일 *
                       <input
                         required
@@ -1235,7 +1238,7 @@ export default function GrowthPage() {
                       />
                     </label>
 
-                    <label className="text-sm font-semibold">
+                    <label className="min-w-0 text-sm font-semibold">
                       몸무게 (g)
                       <input
                         type="number"
@@ -1253,7 +1256,7 @@ export default function GrowthPage() {
                       />
                     </label>
 
-                    <label className="text-sm font-semibold">
+                    <label className="min-w-0 text-sm font-semibold">
                       등갑 길이 (cm)
                       <input
                         type="number"
@@ -1304,18 +1307,18 @@ export default function GrowthPage() {
                       />
                     </div>
 
-                    <div className="flex flex-wrap gap-2 sm:col-span-2">
+                    <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
                       <button
                         type="submit"
                         disabled={busy}
-                        className="rounded-xl bg-[#668b6c] px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
+                        className="min-h-12 rounded-xl bg-[#668b6c] px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
                       >
                         {busy ? "저장 중..." : "기록 저장"}
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowRecordForm(false)}
-                        className="rounded-xl border border-[#dce7d8] bg-white px-6 py-3 text-sm font-bold"
+                        className="min-h-12 rounded-xl border border-[#dce7d8] bg-white px-6 py-3 text-sm font-bold"
                       >
                         취소
                       </button>
@@ -1341,7 +1344,7 @@ export default function GrowthPage() {
                           <img
                             src={photoUrls[r.photo_path]}
                             alt={`${r.measured_on} 성장 사진`}
-                            className="max-h-80 w-full bg-[#f8faf6] object-contain"
+                            className="max-h-60 w-full bg-[#f8faf6] object-contain sm:max-h-80"
                           />
                         )}
 
@@ -1362,12 +1365,12 @@ export default function GrowthPage() {
                             </p>
                           </div>
 
-                          <div className="flex gap-3">
+                          <div className="flex shrink-0 gap-1 sm:gap-2">
                             <button
                               type="button"
                               onClick={() => editRecord(r)}
                               aria-label="기록 수정"
-                              className="text-[#668b6c]"
+                              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#dce7d8] text-[#668b6c]"
                             >
                               <Pencil size={17} />
                             </button>
@@ -1376,7 +1379,7 @@ export default function GrowthPage() {
                               onClick={() => deleteRecord(r)}
                               disabled={busy}
                               aria-label="기록 삭제"
-                              className="text-[#b56b6b]"
+                              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#f0dddd] text-[#b56b6b]"
                             >
                               <Trash2 size={17} />
                             </button>
@@ -1394,7 +1397,7 @@ export default function GrowthPage() {
                 </div>
               </section>
 
-              <section className="rounded-[24px] border border-[#e3e9df] bg-white p-6">
+              <section className="min-w-0 rounded-[22px] border border-[#e3e9df] bg-white p-4 sm:rounded-[24px] sm:p-6">
                 <h2 className="flex items-center gap-2 text-xl font-bold">
                   <ChartNoAxesCombined size={21} />
                   성장 그래프
