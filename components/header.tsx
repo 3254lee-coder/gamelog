@@ -3,13 +3,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Gamepad2, Menu, X, Search } from "lucide-react";
+import { Turtle, Menu, X } from "lucide-react";
 import { useState } from "react";
 import AuthStatus from "./auth-status";
 
 const nav = [
   { href: "/", label: "홈" },
-  { href: "/games", label: "게임 탐색" },
 ];
 
 export default function Header() {
@@ -17,20 +16,27 @@ export default function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#e2e6eb] bg-[#f8f6f1]/95 backdrop-blur-xl">
-      <div className="container-site flex h-17 items-center justify-between gap-5">
-        {/* GAMELOG 로고 */}
+    <header className="sticky top-0 z-50 border-b border-[#dfe7dc] bg-[#f8f6f1]/95 backdrop-blur-xl">
+      <div className="container-site flex min-h-[76px] items-center justify-between gap-4 py-2">
+        {/* 거북이처럼 로고 */}
         <Link
           href="/"
-          className="flex items-center gap-2 text-[#384b61]"
+          className="flex min-w-0 items-center gap-3 text-[#405a46]"
+          onClick={() => setOpen(false)}
         >
-          <span className="flex h-9 w-9 rotate-[-8deg] items-center justify-center rounded-xl bg-[#e8edf4] text-[#6686b5]">
-            <Gamepad2 size={22} />
+          <span className="flex h-11 w-11 shrink-0 rotate-[-8deg] items-center justify-center rounded-xl bg-[#e0ead8] text-[#62866a]">
+            <Turtle size={27} strokeWidth={1.8} />
           </span>
 
-          <span className="font-hand text-4xl leading-none tracking-[-0.06em]">
-            GAMELOG
-            <span className="text-[#6686b5]">.</span>
+          <span className="flex flex-col">
+            <span className="font-hand text-3xl leading-none tracking-[-0.04em] sm:text-4xl">
+              거북이처럼
+              <span className="text-[#87a88b]">.</span>
+            </span>
+
+            <span className="mt-1 text-[11px] font-medium tracking-[0.08em] text-[#819784]">
+              조금 느리면 어때
+            </span>
           </span>
         </Link>
 
@@ -42,8 +48,8 @@ export default function Header() {
               href={item.href}
               className={`relative py-2 text-sm font-semibold transition ${
                 path === item.href
-                  ? "text-[#6686b5]"
-                  : "text-[#66768b] hover:text-[#384b61]"
+                  ? "text-[#62866a]"
+                  : "text-[#66768b] hover:text-[#405a46]"
               }`}
             >
               {item.label}
@@ -55,25 +61,15 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* 검색 및 로그인 */}
-        <div className="hidden items-center gap-4 md:flex">
-          <Link
-            href="/games"
-            className="text-[#6686b5] transition hover:text-[#384b61]"
-            aria-label="게임 검색"
-          >
-            <Search size={20} />
-          </Link>
-
-          <div className="text-sm text-[#384b61]">
-            <AuthStatus />
-          </div>
+        {/* PC 로그인 및 마이페이지 */}
+        <div className="hidden items-center text-sm text-[#405a46] md:flex">
+          <AuthStatus />
         </div>
 
         {/* 모바일 메뉴 버튼 */}
         <button
           type="button"
-          className="text-[#384b61] md:hidden"
+          className="text-[#405a46] md:hidden"
           aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
           aria-expanded={open}
           onClick={() => setOpen(!open)}
@@ -84,7 +80,7 @@ export default function Header() {
 
       {/* 모바일 메뉴 */}
       {open && (
-        <nav className="container-site flex flex-col gap-4 border-t border-[#e2e6eb] py-4 md:hidden">
+        <nav className="container-site flex flex-col gap-4 border-t border-[#dfe7dc] py-4 md:hidden">
           {nav.map((item) => (
             <Link
               key={item.href}
@@ -92,15 +88,15 @@ export default function Header() {
               onClick={() => setOpen(false)}
               className={`text-sm font-semibold ${
                 path === item.href
-                  ? "text-[#6686b5]"
-                  : "text-[#384b61]"
+                  ? "text-[#62866a]"
+                  : "text-[#405a46]"
               }`}
             >
               {item.label}
             </Link>
           ))}
 
-          <div className="border-t border-[#e2e6eb] pt-4 text-sm text-[#384b61]">
+          <div className="border-t border-[#dfe7dc] pt-4 text-sm text-[#405a46]">
             <AuthStatus />
           </div>
         </nav>
