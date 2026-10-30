@@ -3,41 +3,68 @@ import type { Metadata } from "next";
 import Header from "@/components/header";
 import "./globals.css";
 
+const siteUrl = "https://like-turtle.vercel.app";
+const siteName = "거북이처럼 | LIKE TURTLE";
+const siteDescription =
+  "조금 느리면 어때. 육지거북 사육 가이드, 거북이 도감, 커뮤니티, 성장일기를 함께하는 따뜻한 공간.";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://gamelog-tau.vercel.app"),
+  metadataBase: new URL(siteUrl),
+
+  applicationName: "LIKE TURTLE",
 
   title: {
-    default: "GAMELOG | 게임을 기록하는 공간",
-    template: "%s | GAMELOG",
+    default: siteName,
+    template: "%s | 거북이처럼",
   },
 
-  description:
-    "좋은 게임은 기억을 남긴다. 나만의 게임 경험을 기록하고 다른 플레이어와 공유하세요.",
+  description: siteDescription,
+
+  keywords: [
+    "거북이처럼",
+    "LIKE TURTLE",
+    "육지거북",
+    "육지거북 사육",
+    "거북이 사육 가이드",
+    "거북이 도감",
+    "거북이 커뮤니티",
+    "거북이 성장일기",
+    "호스필드 육지거북",
+    "헤르만 육지거북",
+    "설카타 육지거북",
+  ],
+
+  alternates: {
+    canonical: siteUrl,
+  },
 
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    url: "https://gamelog-tau.vercel.app",
-    siteName: "GAMELOG",
-    title: "GAMELOG | 게임을 기록하는 공간",
-    description:
-      "좋은 게임은 기억을 남긴다. 나만의 게임 경험을 기록하고 다른 플레이어와 공유하세요.",
+    url: siteUrl,
+    siteName: "LIKE TURTLE",
+    title: siteName,
+    description: siteDescription,
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "GAMELOG - 좋은 게임은 기억을 남긴다.",
+        url: "/tortoise-hero.png",
+        width: 1645,
+        height: 386,
+        alt: "거북이처럼 - 조금 느리면 어때",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "GAMELOG | 게임을 기록하는 공간",
-    description:
-      "좋은 게임은 기억을 남긴다. 나만의 게임 경험을 기록하고 다른 플레이어와 공유하세요.",
-    images: ["/og-image.png"],
+    title: siteName,
+    description: siteDescription,
+    images: ["/tortoise-hero.png"],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -53,10 +80,10 @@ export default function RootLayout({
 
         {children}
 
-        <footer className="mt-24 border-t border-white/10 py-9">
-          <div className="container-site flex flex-col justify-between gap-2 text-xs text-slate-500 sm:flex-row">
-            <span>© 2026 GAMELOG</span>
-            <span>좋은 게임은 기억을 남긴다.</span>
+        <footer className="mt-24 border-t border-[#e5ebdf] py-9">
+          <div className="container-site flex flex-col justify-between gap-2 text-xs text-[#829482] sm:flex-row">
+            <span>© 2026 LIKE TURTLE · 거북이처럼</span>
+            <span>조금 느리면 어때</span>
           </div>
         </footer>
       </body>
