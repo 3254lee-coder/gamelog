@@ -41,10 +41,10 @@ export default function LoginPage() {
     const cleanEmail = email.trim();
     const cleanNickname = nickname.trim();
 
-    if (!isLogin && (
-      cleanNickname.length < 2 ||
-      cleanNickname.length > 20
-    )) {
+    if (
+      !isLogin &&
+      (cleanNickname.length < 2 || cleanNickname.length > 20)
+    ) {
       setMessage("닉네임은 2~20자로 입력해 주세요.");
       return;
     }
@@ -125,7 +125,7 @@ export default function LoginPage() {
         email.trim(),
         {
           redirectTo:
-            window.location.origin + "/login",
+            window.location.origin + "/reset-password",
         }
       );
 
