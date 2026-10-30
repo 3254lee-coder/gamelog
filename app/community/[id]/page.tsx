@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   CalendarDays,
   ImageIcon,
+  ImagePlus,
   LockKeyhole,
   MessageCircle,
   Pencil,
@@ -42,13 +43,33 @@ type Comment = {
   updated_at: string;
 };
 
+type NewImage = {
+  id: string;
+  file: File;
+  preview: string;
+};
+
 const BUCKET = "tortoise-post-images";
+const MAX_IMAGES = 5;
+const MAX_SIZE = 5 * 1024 * 1024;
+
+const EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 const categoryNames: Record<Category, string> = {
   free: "자유게시판",
   tips: "정보 및 TIP 공유하기",
   question: "질문",
 };
+
+const postFields =
+  "id, author_id, category, title, content, image_paths, created_at, updated_at";
+
+const commentFields =
+  "id, post_id, author_id, nickname, content, created_at, updated_at";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("ko-KR", {
@@ -62,6 +83,7 @@ function formatDate(value: string) {
 
 function getNickname(user: User) {
   const metadata = user.user_metadata;
+
   const value =
     metadata?.nickname ||
     metadata?.display_name ||
@@ -78,15 +100,19 @@ export default function CommunityPostPage() {
   const postId = params.id as string;
   const supabase = getSupabase();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const newImagesRef = useRef<NewImage[]>([]);
+
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [user, setUser] = useState<User | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [commentError, setCommentError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("");
 
   const [editingPost, setEditingPost] = useState(false);
   const [postCategory, setPostCategory] =
@@ -94,11 +120,26 @@ export default function CommunityPostPage() {
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
 
+  const [keptImages, setKeptImages] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<NewImage[]>([]);
+
   const [commentText, setCommentText] = useState("");
   const [editingCommentId, setEditingCommentId] =
     useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] =
     useState("");
+
+  useEffect(() => {
+    newImagesRef.current = newImages;
+  }, [newImages]);
+
+  useEffect(() => {
+    return () => {
+      newImagesRef.current.forEach((item) => {
+        URL.revokeObjectURL(item.preview);
+      });
+    };
+  }, []);
 
   useEffect(() => {
     if (!supabase || !postId) {
@@ -116,17 +157,13 @@ export default function CommunityPostPage() {
         await Promise.all([
           supabase!
             .from("tortoise_posts")
-            .select(
-              "id, author_id, category, title, content, image_paths, created_at, updated_at"
-            )
+            .select(postFields)
             .eq("id", postId)
             .maybeSingle(),
 
           supabase!
             .from("tortoise_comments")
-            .select(
-              "id, post_id, author_id, nickname, content, created_at, updated_at"
-            )
+            .select(commentFields)
             .eq("post_id", postId)
             .order("created_at", { ascending: true }),
 
@@ -141,13 +178,16 @@ export default function CommunityPostPage() {
         setError("존재하지 않거나 삭제된 게시글입니다.");
       } else {
         const loaded = postResult.data as Post;
+
         setPost({
           ...loaded,
           image_paths: loaded.image_paths ?? [],
         });
+
         setPostCategory(loaded.category);
         setPostTitle(loaded.title);
         setPostContent(loaded.content);
+        setKeptImages(loaded.image_paths ?? []);
       }
 
       if (commentResult.error) {
@@ -166,7 +206,9 @@ export default function CommunityPostPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        if (active) setUser(session?.user ?? null);
+        if (active) {
+          setUser(session?.user ?? null);
+        }
       }
     );
 
@@ -175,6 +217,14 @@ export default function CommunityPostPage() {
       subscription.unsubscribe();
     };
   }, [postId, supabase]);
+
+  function getImageUrl(path: string) {
+    if (!supabase) return "";
+
+    return supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(path).data.publicUrl;
+  }
 
   async function verifyOwner(authorId: string) {
     if (!supabase) return false;
@@ -189,9 +239,7 @@ export default function CommunityPostPage() {
 
     const { data, error } = await supabase
       .from("tortoise_comments")
-      .select(
-        "id, post_id, author_id, nickname, content, created_at, updated_at"
-      )
+      .select(commentFields)
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
 
@@ -202,22 +250,94 @@ export default function CommunityPostPage() {
     }
   }
 
-  function getImageUrl(path: string) {
-    if (!supabase) return "";
-
-    return supabase.storage
-      .from(BUCKET)
-      .getPublicUrl(path).data.publicUrl;
+  function clearNewImages() {
+    setNewImages((previous) => {
+      previous.forEach((item) => {
+        URL.revokeObjectURL(item.preview);
+      });
+      return [];
+    });
   }
 
   function startPostEdit() {
-    if (!post || !user || post.author_id !== user.id) return;
+    if (!post || !user || post.author_id !== user.id) {
+      return;
+    }
 
     setPostCategory(post.category);
     setPostTitle(post.title);
     setPostContent(post.content);
+    setKeptImages([...post.image_paths]);
+
+    clearNewImages();
     setActionError("");
     setEditingPost(true);
+  }
+
+  function cancelPostEdit() {
+    if (saving) return;
+
+    clearNewImages();
+    setEditingPost(false);
+    setActionError("");
+    setStatus("");
+  }
+
+  function handleImageSelect(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    if (!files.length) return;
+
+    setActionError("");
+
+    if (
+      keptImages.length + newImages.length + files.length >
+      MAX_IMAGES
+    ) {
+      setActionError(
+        `사진은 최대 ${MAX_IMAGES}장까지 첨부할 수 있습니다.`
+      );
+      return;
+    }
+
+    for (const file of files) {
+      if (!Object.keys(EXTENSIONS).includes(file.type)) {
+        setActionError(
+          "JPG, PNG, WEBP 형식의 사진만 첨부할 수 있습니다."
+        );
+        return;
+      }
+
+      if (file.size === 0 || file.size > MAX_SIZE) {
+        setActionError(
+          "사진 1장의 크기는 5MB 이하여야 합니다."
+        );
+        return;
+      }
+    }
+
+    const selected: NewImage[] = files.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setNewImages((previous) => [...previous, ...selected]);
+  }
+
+  function removeNewImage(id: string) {
+    setNewImages((previous) => {
+      const item = previous.find((image) => image.id === id);
+
+      if (item) {
+        URL.revokeObjectURL(item.preview);
+      }
+
+      return previous.filter((image) => image.id !== id);
+    });
   }
 
   async function savePostEdit(
@@ -240,42 +360,137 @@ export default function CommunityPostPage() {
       return;
     }
 
+    if (keptImages.length + newImages.length > MAX_IMAGES) {
+      setActionError("사진은 최대 5장까지 첨부할 수 있습니다.");
+      return;
+    }
+
     setSaving(true);
     setActionError("");
+    setStatus("");
 
-    if (!(await verifyOwner(post.author_id))) {
+    const { data: authData, error: authError } =
+      await supabase.auth.getUser();
+
+    if (
+      authError ||
+      !authData.user ||
+      authData.user.id !== post.author_id
+    ) {
       setSaving(false);
       setActionError("게시글 수정 권한이 없습니다.");
       return;
     }
 
-    const { data, error } = await supabase
-      .from("tortoise_posts")
-      .update({
-        category: postCategory,
-        title,
-        content,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", post.id)
-      .eq("author_id", post.author_id)
-      .select(
-        "id, author_id, category, title, content, image_paths, created_at, updated_at"
-      )
-      .single();
+    const currentUser = authData.user;
+    const uploadedPaths: string[] = [];
 
-    setSaving(false);
+    try {
+      for (let index = 0; index < newImages.length; index++) {
+        const item = newImages[index];
+        const extension = EXTENSIONS[item.file.type];
 
-    if (error || !data) {
-      setActionError("게시글 수정에 실패했습니다.");
-      return;
+        const path =
+          `${currentUser.id}/${crypto.randomUUID()}.${extension}`;
+
+        setStatus(
+          `사진 업로드 중... (${index + 1}/${newImages.length})`
+        );
+
+        const { error: uploadError } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, item.file, {
+            contentType: item.file.type,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(
+            `사진 업로드 실패: ${uploadError.message}`
+          );
+        }
+
+        uploadedPaths.push(path);
+      }
+
+      setStatus("게시글 수정 사항 저장 중...");
+
+      const finalPaths = [...keptImages, ...uploadedPaths];
+
+      const { data, error: updateError } = await supabase
+        .from("tortoise_posts")
+        .update({
+          category: postCategory,
+          title,
+          content,
+          image_paths: finalPaths,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", post.id)
+        .eq("author_id", currentUser.id)
+        .select(postFields)
+        .single();
+
+      if (updateError || !data) {
+        throw new Error(
+          updateError?.message ?? "게시글 수정에 실패했습니다."
+        );
+      }
+
+      const oldPaths = post.image_paths.filter(
+        (path) => !keptImages.includes(path)
+      );
+
+      setPost({
+        ...(data as Post),
+        image_paths: data.image_paths ?? [],
+      });
+
+      setEditingPost(false);
+      clearNewImages();
+      setStatus("");
+
+      // DB 수정 성공 후 제외된 사진을 Storage에서 정리합니다.
+      if (oldPaths.length) {
+        const { error: removeError } =
+          await supabase.storage
+            .from(BUCKET)
+            .remove(oldPaths);
+
+        if (removeError) {
+          console.error(
+            "제외된 사진 정리 실패:",
+            removeError.message
+          );
+          setActionError(
+            "게시글 수정은 완료됐지만 일부 사진 파일 정리에 실패했습니다."
+          );
+        }
+      }
+    } catch (caught) {
+      if (uploadedPaths.length) {
+        const { error: cleanupError } =
+          await supabase.storage
+            .from(BUCKET)
+            .remove(uploadedPaths);
+
+        if (cleanupError) {
+          console.error(
+            "새 사진 정리 실패:",
+            cleanupError.message
+          );
+        }
+      }
+
+      setActionError(
+        caught instanceof Error
+          ? caught.message
+          : "게시글 수정 중 오류가 발생했습니다."
+      );
+    } finally {
+      setSaving(false);
+      setStatus("");
     }
-
-    setPost({
-      ...(data as Post),
-      image_paths: data.image_paths ?? [],
-    });
-    setEditingPost(false);
   }
 
   async function deletePost() {
@@ -312,7 +527,7 @@ export default function CommunityPostPage() {
       return;
     }
 
-    // Storage 파일 정리는 후속 단계에서 구현합니다.
+    // 게시글 전체 삭제 시 Storage 정리는 다음 단계에서 구현합니다.
     router.push("/community");
     router.refresh();
   }
@@ -340,7 +555,9 @@ export default function CommunityPostPage() {
     if (authError || !data.user) {
       setSaving(false);
       setUser(null);
-      setCommentError("로그인 후 댓글을 작성할 수 있습니다.");
+      setCommentError(
+        "로그인 후 댓글을 작성할 수 있습니다."
+      );
       return;
     }
 
@@ -490,6 +707,7 @@ export default function CommunityPostPage() {
                     <select
                       id="edit-category"
                       value={postCategory}
+                      disabled={saving}
                       onChange={(event) =>
                         setPostCategory(
                           event.target.value as Category
@@ -515,6 +733,7 @@ export default function CommunityPostPage() {
                     <input
                       id="edit-title"
                       value={postTitle}
+                      disabled={saving}
                       onChange={(event) =>
                         setPostTitle(event.target.value)
                       }
@@ -534,6 +753,7 @@ export default function CommunityPostPage() {
                     <textarea
                       id="edit-content"
                       value={postContent}
+                      disabled={saving}
                       onChange={(event) =>
                         setPostContent(event.target.value)
                       }
@@ -544,9 +764,141 @@ export default function CommunityPostPage() {
                     />
                   </div>
 
+                  {/* 기존 사진 및 새 사진 수정 */}
+                  <div className="border-t border-[#e3e9df] pt-6">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="flex items-center gap-2 text-sm font-bold">
+                        <ImageIcon size={18} />
+                        사진 수정
+                      </h2>
+
+                      <span className="text-xs text-[#829482]">
+                        {keptImages.length + newImages.length}
+                        {" / "}
+                        {MAX_IMAGES}장
+                      </span>
+                    </div>
+
+                    <p className="mb-4 text-xs leading-6 text-[#829482]">
+                      기존 사진을 제외하거나 새 사진을 추가할 수 있습니다.
+                      수정 완료를 누르기 전까지 변경 사항은 저장되지 않습니다.
+                    </p>
+
+                    {(keptImages.length > 0 ||
+                      newImages.length > 0) && (
+                      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {keptImages.map((path, index) => (
+                          <div
+                            key={path}
+                            className="relative aspect-square overflow-hidden rounded-2xl bg-[#eef3ea]"
+                          >
+                            <Image
+                              src={getImageUrl(path)}
+                              alt={`기존 사진 ${index + 1}`}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+
+                            <button
+                              type="button"
+                              disabled={saving}
+                              onClick={() =>
+                                setKeptImages((previous) =>
+                                  previous.filter(
+                                    (item) => item !== path
+                                  )
+                                )
+                              }
+                              aria-label="기존 사진 제외"
+                              className="absolute right-2 top-2 rounded-full bg-white/95 p-2 text-red-500 shadow-sm disabled:opacity-50"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+
+                        {newImages.map((item) => (
+                          <div
+                            key={item.id}
+                            className="relative aspect-square overflow-hidden rounded-2xl bg-[#eef3ea]"
+                          >
+                            <Image
+                              src={item.preview}
+                              alt={item.file.name}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+
+                            <span className="absolute bottom-2 left-2 rounded-full bg-[#668b6c] px-2 py-1 text-[10px] font-bold text-white">
+                              새 사진
+                            </span>
+
+                            <button
+                              type="button"
+                              disabled={saving}
+                              onClick={() =>
+                                removeNewImage(item.id)
+                              }
+                              aria-label="새 사진 제외"
+                              className="absolute right-2 top-2 rounded-full bg-white/95 p-2 text-red-500 shadow-sm disabled:opacity-50"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      disabled={saving}
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      aria-label="추가할 사진 선택"
+                    />
+
+                    <button
+                      type="button"
+                      disabled={
+                        saving ||
+                        keptImages.length + newImages.length >=
+                          MAX_IMAGES
+                      }
+                      onClick={() =>
+                        fileInputRef.current?.click()
+                      }
+                      className="flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#cddfca] bg-white px-5 py-8 text-[#719273] hover:bg-[#f0f7ed] disabled:opacity-50"
+                    >
+                      <ImagePlus size={28} />
+                      <span className="mt-3 text-sm font-bold">
+                        사진 추가하기
+                      </span>
+                      <span className="mt-2 text-xs">
+                        JPG, PNG, WEBP · 1장당 최대 5MB
+                      </span>
+                    </button>
+                  </div>
+
                   {actionError && (
-                    <p className="text-sm text-red-600">
+                    <p
+                      role="alert"
+                      className="rounded-xl bg-red-50 p-4 text-sm text-red-600"
+                    >
                       {actionError}
+                    </p>
+                  )}
+
+                  {status && (
+                    <p
+                      role="status"
+                      className="rounded-xl bg-[#edf4e9] p-4 text-sm text-[#62866a]"
+                    >
+                      {status}
                     </p>
                   )}
 
@@ -554,14 +906,12 @@ export default function CommunityPostPage() {
                     <button
                       type="button"
                       disabled={saving}
-                      onClick={() => {
-                        setEditingPost(false);
-                        setActionError("");
-                      }}
-                      className="rounded-full border border-[#dce7d8] bg-white px-6 py-3 text-sm"
+                      onClick={cancelPostEdit}
+                      className="rounded-full border border-[#dce7d8] bg-white px-6 py-3 text-sm disabled:opacity-50"
                     >
                       취소
                     </button>
+
                     <button
                       type="submit"
                       disabled={saving}
@@ -627,7 +977,6 @@ export default function CommunityPostPage() {
                   {post.content}
                 </div>
 
-                {/* 첨부 사진 표시 */}
                 {post.image_paths.length > 0 && (
                   <section className="mt-9 border-t border-[#edf0e9] pt-8">
                     <div className="mb-5 flex items-center gap-2 text-[#668b6c]">
@@ -666,7 +1015,7 @@ export default function CommunityPostPage() {
             )}
           </article>
 
-          {/* 댓글 영역 */}
+          {/* 댓글 */}
           <section className="mt-8 rounded-[24px] border border-[#e3e9df] bg-white px-6 py-9 md:px-10">
             <div className="flex items-center gap-2">
               <MessageCircle
@@ -698,7 +1047,10 @@ export default function CommunityPostPage() {
                     !!user && comment.author_id === user.id;
 
                   return (
-                    <div key={comment.id} className="py-6">
+                    <div
+                      key={comment.id}
+                      className="py-6"
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <span className="text-sm font-bold">
@@ -716,7 +1068,9 @@ export default function CommunityPostPage() {
                               disabled={saving}
                               onClick={() => {
                                 setEditingCommentId(comment.id);
-                                setEditingCommentText(comment.content);
+                                setEditingCommentText(
+                                  comment.content
+                                );
                               }}
                               className="inline-flex items-center gap-1 text-xs text-[#668b6c]"
                             >
@@ -727,7 +1081,9 @@ export default function CommunityPostPage() {
                             <button
                               type="button"
                               disabled={saving}
-                              onClick={() => deleteComment(comment)}
+                              onClick={() =>
+                                deleteComment(comment)
+                              }
                               className="inline-flex items-center gap-1 text-xs text-red-500"
                             >
                               <Trash2 size={14} />
@@ -742,7 +1098,9 @@ export default function CommunityPostPage() {
                           <textarea
                             value={editingCommentText}
                             onChange={(event) =>
-                              setEditingCommentText(event.target.value)
+                              setEditingCommentText(
+                                event.target.value
+                              )
                             }
                             maxLength={2000}
                             rows={4}
@@ -753,13 +1111,15 @@ export default function CommunityPostPage() {
                             <button
                               type="button"
                               disabled={saving}
-                              onClick={() =>
-                                setEditingCommentId(null)
-                              }
+                              onClick={() => {
+                                setEditingCommentId(null);
+                                setEditingCommentText("");
+                              }}
                               className="rounded-full border px-5 py-2 text-xs"
                             >
                               취소
                             </button>
+
                             <button
                               type="button"
                               disabled={saving}
