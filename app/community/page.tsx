@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -42,6 +42,21 @@ type Post = {
   like_count: number;
   comment_count: number;
   total_count: number;
+};
+
+type BrowsePostRow = {
+  id: string;
+  category: string;
+  title: string;
+  content: string;
+  author_id: string;
+  image_paths: string[] | null;
+  view_count: number | null;
+  created_at: string;
+  updated_at: string;
+  like_count: number | null;
+  comment_count: number | null;
+  total_count: number | null;
 };
 
 const BUCKET = "tortoise-post-images";
@@ -92,8 +107,37 @@ function formatNumber(value: number) {
   return value.toLocaleString("ko-KR");
 }
 
+function normalizeCategory(value: string): Category {
+  if (
+    value === "free" ||
+    value === "tips" ||
+    value === "question"
+  ) {
+    return value;
+  }
+
+  return "free";
+}
+
+function normalizePost(item: BrowsePostRow): Post {
+  return {
+    id: item.id,
+    category: normalizeCategory(item.category),
+    title: item.title,
+    content: item.content,
+    author_id: item.author_id,
+    image_paths: item.image_paths ?? [],
+    view_count: Number(item.view_count ?? 0),
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    like_count: Number(item.like_count ?? 0),
+    comment_count: Number(item.comment_count ?? 0),
+    total_count: Number(item.total_count ?? 0),
+  };
+}
+
 export default function CommunityPage() {
-  const supabase = getSupabase();
+  const supabase = useMemo(() => getSupabase(), []);
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,6 +147,7 @@ export default function CommunityPage() {
     useState<CategoryFilter>("all");
 
   const [query, setQuery] = useState("");
+
   const [sort, setSort] =
     useState<SortOrder>("newest");
 
@@ -129,11 +174,10 @@ export default function CommunityPage() {
     setLoading(true);
     setError("");
 
-    // 검색어 입력 중 과도한 요청을 줄이기 위한 대기
     const timer = window.setTimeout(async () => {
-      const { data, error: fetchError } =
-        await supabase
-          .rpc("browse_tortoise_posts", {
+      try {
+        const { data, error: fetchError } =
+          await supabase.rpc("browse_tortoise_posts", {
             p_category: category,
             p_query: query.trim(),
             p_sort: sort,
@@ -143,42 +187,55 @@ export default function CommunityPage() {
             p_photos_only: photosOnly,
           });
 
-      if (!active) return;
+        if (!active) return;
 
-      if (fetchError) {
+        if (fetchError) {
+          console.error(
+            "커뮤니티 목록 조회 실패:",
+            fetchError.message
+          );
+
+          setError(
+            "게시글을 불러오지 못했습니다. Supabase SQL 설정을 확인해 주세요."
+          );
+
+          setPosts([]);
+          setTotalCount(0);
+          return;
+        }
+
+        const rows: BrowsePostRow[] =
+          (data ?? []) as BrowsePostRow[];
+
+        const loadedPosts: Post[] =
+          rows.map(normalizePost);
+
+        setPosts(loadedPosts);
+
+        setTotalCount(
+          loadedPosts.length > 0
+            ? loadedPosts[0].total_count
+            : 0
+        );
+      } catch (caught) {
+        if (!active) return;
+
         console.error(
-          "커뮤니티 목록 조회 실패:",
-          fetchError.message
+          "커뮤니티 목록 오류:",
+          caught
         );
 
         setError(
-          "게시글을 불러오지 못했습니다. Supabase SQL 설정을 확인해 주세요."
+          "게시글을 불러오는 중 오류가 발생했습니다."
         );
 
         setPosts([]);
         setTotalCount(0);
-        setLoading(false);
-        return;
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
-
-      const loadedPosts: Post[] = (data ?? []).map(
-        (item) => ({
-          ...(item as Post),
-          image_paths: item.image_paths ?? [],
-          view_count: Number(item.view_count ?? 0),
-          like_count: Number(item.like_count ?? 0),
-          comment_count: Number(item.comment_count ?? 0),
-          total_count: Number(item.total_count ?? 0),
-        })
-      );
-
-      setPosts(loadedPosts);
-      setTotalCount(
-        loadedPosts.length > 0
-          ? loadedPosts[0].total_count
-          : 0
-      );
-      setLoading(false);
     }, query ? 300 : 0);
 
     return () => {
@@ -255,10 +312,12 @@ export default function CommunityPage() {
   }
 
   const startPage = Math.max(1, page - 2);
+
   const endPage = Math.min(
     totalPages,
     startPage + 4
   );
+
   const adjustedStartPage = Math.max(
     1,
     endPage - 4
@@ -272,7 +331,9 @@ export default function CommunityPage() {
   );
 
   const firstItem =
-    totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+    totalCount === 0
+      ? 0
+      : (page - 1) * PAGE_SIZE + 1;
 
   const lastItem = Math.min(
     page * PAGE_SIZE,
@@ -299,6 +360,7 @@ export default function CommunityPage() {
       <section className="mt-7 rounded-[28px] bg-[#eaf2e4] px-7 py-12 md:px-12 md:py-16">
         <div className="flex items-center gap-2 text-[#62866a]">
           <Turtle size={24} />
+
           <span className="text-xs font-bold tracking-[0.18em]">
             TORTOISE COMMUNITY
           </span>
@@ -379,6 +441,7 @@ export default function CommunityPage() {
             <p className="mb-2 text-xs font-bold tracking-[0.16em] text-[#8ca18a]">
               COMMUNITY BOARD
             </p>
+
             <h2 className="font-hand text-3xl md:text-4xl">
               게시글
             </h2>
@@ -400,6 +463,7 @@ export default function CommunityPage() {
               size={20}
               className="shrink-0 text-[#8aa58b]"
             />
+
             <input
               type="search"
               value={query}
@@ -422,12 +486,21 @@ export default function CommunityPage() {
             aria-label="게시글 정렬"
             className="rounded-2xl border border-[#dce7d8] bg-white px-4 py-3 text-sm outline-none"
           >
-            <option value="newest">최신순</option>
+            <option value="newest">
+              최신순
+            </option>
+
             <option value="popular">
               인기순 (좋아요 우선)
             </option>
-            <option value="views">조회수순</option>
-            <option value="oldest">오래된순</option>
+
+            <option value="views">
+              조회수순
+            </option>
+
+            <option value="oldest">
+              오래된순
+            </option>
           </select>
         </div>
 
@@ -435,7 +508,9 @@ export default function CommunityPage() {
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => updateRecent(!recentOnly)}
+            onClick={() =>
+              updateRecent(!recentOnly)
+            }
             aria-pressed={recentOnly}
             className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold transition ${
               recentOnly
@@ -449,7 +524,9 @@ export default function CommunityPage() {
 
           <button
             type="button"
-            onClick={() => updatePhotos(!photosOnly)}
+            onClick={() =>
+              updatePhotos(!photosOnly)
+            }
             aria-pressed={photosOnly}
             className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold transition ${
               photosOnly
@@ -479,12 +556,14 @@ export default function CommunityPage() {
               : `검색 결과 ${formatNumber(totalCount)}개`}
           </p>
 
-          {!loading && !error && totalCount > 0 && (
-            <p className="text-xs text-[#9aa99a]">
-              {formatNumber(firstItem)}~
-              {formatNumber(lastItem)}번째 표시
-            </p>
-          )}
+          {!loading &&
+            !error &&
+            totalCount > 0 && (
+              <p className="text-xs text-[#9aa99a]">
+                {formatNumber(firstItem)}~
+                {formatNumber(lastItem)}번째 표시
+              </p>
+            )}
         </div>
 
         {/* 게시글 목록 */}
@@ -533,13 +612,14 @@ export default function CommunityPage() {
           ) : (
             <div className="divide-y divide-[#edf0e9]">
               {posts.map((post) => {
-                const itemCategory = getCategory(
-                  post.category
-                );
+                const itemCategory =
+                  getCategory(post.category);
 
                 const thumbnail =
                   post.image_paths.length > 0
-                    ? getImageUrl(post.image_paths[0])
+                    ? getImageUrl(
+                        post.image_paths[0]
+                      )
                     : "";
 
                 return (
@@ -552,11 +632,14 @@ export default function CommunityPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full bg-[#edf4e9] px-3 py-1 text-xs font-bold text-[#64866a]">
-                            {itemCategory?.name ?? "게시글"}
+                            {itemCategory?.name ??
+                              "게시글"}
                           </span>
 
                           <span className="text-xs text-[#9aa99a]">
-                            {formatDate(post.created_at)}
+                            {formatDate(
+                              post.created_at
+                            )}
                           </span>
                         </div>
 
@@ -565,7 +648,8 @@ export default function CommunityPage() {
                             {post.title}
                           </h3>
 
-                          {post.image_paths.length > 0 && (
+                          {post.image_paths.length >
+                            0 && (
                             <span className="inline-flex shrink-0 items-center gap-1 text-xs text-[#719273]">
                               <Camera size={15} />
                               {post.image_paths.length}
@@ -580,17 +664,23 @@ export default function CommunityPage() {
                         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#879989]">
                           <span className="inline-flex items-center gap-1 text-[#c48b91]">
                             <Heart size={15} />
-                            {formatNumber(post.like_count)}
+                            {formatNumber(
+                              post.like_count
+                            )}
                           </span>
 
                           <span className="inline-flex items-center gap-1">
                             <Eye size={15} />
-                            {formatNumber(post.view_count)}
+                            {formatNumber(
+                              post.view_count
+                            )}
                           </span>
 
                           <span className="inline-flex items-center gap-1">
                             <MessageCircle size={15} />
-                            {formatNumber(post.comment_count)}
+                            {formatNumber(
+                              post.comment_count
+                            )}
                           </span>
                         </div>
                       </div>
@@ -620,56 +710,73 @@ export default function CommunityPage() {
         </div>
 
         {/* 페이지네이션 */}
-        {!loading && !error && posts.length > 0 && totalPages > 1 && (
-          <nav
-            aria-label="게시글 페이지 이동"
-            className="mt-8 flex flex-wrap items-center justify-center gap-2"
-          >
-            <button
-              type="button"
-              onClick={() => moveToPage(page - 1)}
-              disabled={page === 1}
-              aria-label="이전 페이지"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#dce7d8] bg-white text-[#64866a] disabled:cursor-not-allowed disabled:opacity-40"
+        {!loading &&
+          !error &&
+          posts.length > 0 &&
+          totalPages > 1 && (
+            <nav
+              aria-label="게시글 페이지 이동"
+              className="mt-8 flex flex-wrap items-center justify-center gap-2"
             >
-              <ChevronLeft size={19} />
-            </button>
-
-            {pageNumbers.map((pageNumber) => (
               <button
-                key={pageNumber}
                 type="button"
-                onClick={() => moveToPage(pageNumber)}
-                aria-current={
-                  pageNumber === page ? "page" : undefined
+                onClick={() =>
+                  moveToPage(page - 1)
                 }
-                className={`flex h-10 min-w-10 items-center justify-center rounded-xl px-2 text-sm font-bold transition ${
-                  pageNumber === page
-                    ? "bg-[#668b6c] text-white"
-                    : "border border-[#dce7d8] bg-white text-[#64866a] hover:bg-[#f1f6ed]"
-                }`}
+                disabled={page === 1}
+                aria-label="이전 페이지"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#dce7d8] bg-white text-[#64866a] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {pageNumber}
+                <ChevronLeft size={19} />
               </button>
-            ))}
 
-            <button
-              type="button"
-              onClick={() => moveToPage(page + 1)}
-              disabled={page === totalPages}
-              aria-label="다음 페이지"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#dce7d8] bg-white text-[#64866a] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronRight size={19} />
-            </button>
-          </nav>
-        )}
+              {pageNumbers.map(
+                (pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    onClick={() =>
+                      moveToPage(pageNumber)
+                    }
+                    aria-current={
+                      pageNumber === page
+                        ? "page"
+                        : undefined
+                    }
+                    className={`flex h-10 min-w-10 items-center justify-center rounded-xl px-2 text-sm font-bold transition ${
+                      pageNumber === page
+                        ? "bg-[#668b6c] text-white"
+                        : "border border-[#dce7d8] bg-white text-[#64866a] hover:bg-[#f1f6ed]"
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                )
+              )}
 
-        {!loading && !error && totalCount > 0 && (
-          <p className="mt-4 text-center text-xs text-[#9aa99a]">
-            {page} / {totalPages} 페이지
-          </p>
-        )}
+              <button
+                type="button"
+                onClick={() =>
+                  moveToPage(page + 1)
+                }
+                disabled={
+                  page === totalPages
+                }
+                aria-label="다음 페이지"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#dce7d8] bg-white text-[#64866a] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronRight size={19} />
+              </button>
+            </nav>
+          )}
+
+        {!loading &&
+          !error &&
+          totalCount > 0 && (
+            <p className="mt-4 text-center text-xs text-[#9aa99a]">
+              {page} / {totalPages} 페이지
+            </p>
+          )}
       </section>
 
       {/* 하단 안내 */}
