@@ -38,7 +38,7 @@ const categories = [
     icon: MessageCircle,
     background: "#eaf1f8",
     color: "#6c8ca9",
-    href: "",
+    href: "/community",
   },
   {
     title: "성장일기",
@@ -201,32 +201,50 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 커뮤니티 미리보기 */}
+      {/* 커뮤니티 바로가기 */}
       <section className="mt-16">
-        <div className="mb-6">
-          <p className="mb-2 text-xs font-bold tracking-[0.16em] text-[#8ca18a]">
-            COMMUNITY
-          </p>
-          <h2 className="font-hand text-3xl md:text-4xl">
-            우리들의 이야기
-          </h2>
+        <div className="mb-6 flex items-end justify-between gap-3">
+          <div>
+            <p className="mb-2 text-xs font-bold tracking-[0.16em] text-[#8ca18a]">
+              COMMUNITY
+            </p>
+            <h2 className="font-hand text-3xl md:text-4xl">
+              우리들의 이야기
+            </h2>
+          </div>
+
+          <Link
+            href="/community"
+            className="inline-flex items-center gap-2 text-sm font-bold text-[#668b6c] hover:text-[#405a46]"
+          >
+            전체 게시글
+            <ArrowRight size={17} />
+          </Link>
         </div>
 
-        <div className="rounded-[24px] border border-dashed border-[#d8e4d3] bg-white px-6 py-12 text-center">
+        <div className="rounded-[24px] border border-[#d8e4d3] bg-white px-6 py-12 text-center">
           <Camera
             size={34}
             className="mx-auto text-[#94af95]"
           />
 
           <h3 className="font-hand mt-4 text-2xl">
-            곧 만나요!
+            거북이 이야기를 나눠보세요!
           </h3>
 
           <p className="mt-3 text-sm leading-7 text-[#829483]">
             우리 거북이의 사진과 일상을 공유하고,
-            궁금한 점을 자유롭게 질문할 수 있는
-            커뮤니티를 준비하고 있어요.
+            <br />
+            궁금한 점을 자유롭게 질문할 수 있어요.
           </p>
+
+          <Link
+            href="/community"
+            className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#527558]"
+          >
+            커뮤니티 둘러보기
+            <ArrowRight size={17} />
+          </Link>
         </div>
       </section>
 
@@ -247,7 +265,7 @@ export default function HomePage() {
         </p>
 
         <Link
-          href="/login"
+          href="/community"
           className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#527558]"
         >
           함께하기
