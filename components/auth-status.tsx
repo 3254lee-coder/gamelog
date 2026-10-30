@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import {
   ChevronDown,
   LogOut,
@@ -11,8 +12,18 @@ import {
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 
+function getNickname(user: User) {
+  return String(
+    user.user_metadata?.nickname ||
+      user.user_metadata?.display_name ||
+      user.user_metadata?.name ||
+      user.email?.split("@")[0] ||
+      "내 계정"
+  );
+}
+
 export default function AuthStatus() {
-  const [email, setEmail] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -31,7 +42,7 @@ export default function AuthStatus() {
 
     db.auth.getUser().then(({ data }) => {
       if (!active) return;
-      setEmail(data.user?.email ?? null);
+      setUser(data.user ?? null);
       setReady(true);
     });
 
@@ -39,7 +50,7 @@ export default function AuthStatus() {
       data: { subscription },
     } = db.auth.onAuthStateChange((_event, session) => {
       if (!active) return;
-      setEmail(session?.user.email ?? null);
+      setUser(session?.user ?? null);
       setReady(true);
     });
 
@@ -67,7 +78,10 @@ export default function AuthStatus() {
       }
     }
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
     document.addEventListener("keydown", handleEscape);
 
     return () => {
@@ -75,7 +89,10 @@ export default function AuthStatus() {
         "mousedown",
         handleOutsideClick
       );
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
     };
   }, [open]);
 
@@ -88,12 +105,14 @@ export default function AuthStatus() {
     const { error } = await db.auth.signOut();
 
     if (error) {
-      window.alert("로그아웃에 실패했습니다: " + error.message);
+      window.alert(
+        "로그아웃에 실패했습니다: " + error.message
+      );
       setBusy(false);
       return;
     }
 
-    setEmail(null);
+    setUser(null);
     setOpen(false);
     setBusy(false);
 
@@ -103,17 +122,17 @@ export default function AuthStatus() {
 
   if (!ready) {
     return (
-      <span className="text-xs text-[#8493a6]">
+      <span className="text-xs text-[#829482]">
         확인 중...
       </span>
     );
   }
 
-  if (!email) {
+  if (!user) {
     return (
       <Link
         href="/login"
-        className="inline-flex items-center gap-2 rounded-full border border-[#d6e0eb] bg-white px-4 py-2 text-xs font-bold text-[#6686b5] transition hover:bg-[#e8edf4]"
+        className="inline-flex items-center gap-2 rounded-full border border-[#dce7d8] bg-white px-4 py-2 text-xs font-bold text-[#668b6c] transition hover:bg-[#edf5e8]"
       >
         <UserRound size={16} />
         로그인 / 회원가입
@@ -125,23 +144,25 @@ export default function AuthStatus() {
     <div ref={menuRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() =>
+          setOpen((value) => !value)
+        }
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="내 계정 메뉴"
-        className="flex items-center gap-2 rounded-full px-2 py-1.5 text-[#384b61] transition hover:bg-[#e8edf4]"
+        className="flex items-center gap-2 rounded-full px-2 py-1.5 text-[#405a46] transition hover:bg-[#edf5e8]"
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e8edf4] text-[#6686b5]">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e8f1e2] text-[#668b6c]">
           <UserRound size={20} />
         </span>
 
-        <span className="text-xs font-bold">
-          내 계정
+        <span className="max-w-28 truncate text-xs font-bold">
+          {getNickname(user)}
         </span>
 
         <ChevronDown
           size={15}
-          className={`text-[#6686b5] transition-transform ${
+          className={`text-[#668b6c] transition-transform ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -150,25 +171,28 @@ export default function AuthStatus() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-[100] mt-3 w-56 overflow-hidden rounded-2xl border border-[#e2e6eb] bg-white p-2 text-[#384b61] shadow-xl"
+          className="absolute right-0 top-full z-[100] mt-3 w-56 overflow-hidden rounded-2xl border border-[#e3e9df] bg-white p-2 text-[#405a46] shadow-xl"
         >
-          <div className="border-b border-[#edf0f3] px-3 py-3">
-            <p className="text-[11px] font-bold tracking-wider text-[#8493a6]">
-              SIGNED IN AS
+          <div className="border-b border-[#edf0e9] px-3 py-3">
+            <p className="text-[11px] font-bold tracking-wider text-[#829482]">
+              LIKE TURTLE MEMBER
             </p>
 
             <p className="mt-1 truncate text-xs font-semibold">
-              {email}
+              {user.email}
             </p>
           </div>
 
           <Link
-            href="/account"
+            href="/my"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="mt-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition hover:bg-[#f3f6fa]"
+            className="mt-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition hover:bg-[#edf5e8]"
           >
-            <UserRound size={18} className="text-[#6686b5]" />
+            <UserRound
+              size={18}
+              className="text-[#668b6c]"
+            />
             마이페이지
           </Link>
 
@@ -180,7 +204,9 @@ export default function AuthStatus() {
             className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-[#b56b6b] transition hover:bg-[#fff1f1] disabled:opacity-50"
           >
             <LogOut size={18} />
-            {busy ? "로그아웃 중..." : "로그아웃"}
+            {busy
+              ? "로그아웃 중..."
+              : "로그아웃"}
           </button>
         </div>
       )}
