@@ -7,6 +7,7 @@ const nav = [
   { href: "/", label: "홈" },
   { href: "/guide", label: "사육 가이드" },
   { href: "/species", label: "거북이 도감" },
+  { href: "/community", label: "커뮤니티" },
 ];
 
 export default function Header() {
@@ -29,7 +30,7 @@ export default function Header() {
         </Link>
 
         <div className="flex flex-wrap items-center gap-4 md:gap-7">
-          <nav className="flex items-center gap-4 md:gap-6">
+          <nav className="flex flex-wrap items-center gap-4 md:gap-6">
             {nav.map((item) => (
               <Link
                 key={item.href}
