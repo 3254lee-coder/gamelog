@@ -8,6 +8,7 @@ const nav = [
   { href: "/guide", label: "사육 가이드" },
   { href: "/species", label: "거북이 도감" },
   { href: "/community", label: "커뮤니티" },
+  { href: "/growth", label: "성장일기" },
 ];
 
 export default function Header() {
