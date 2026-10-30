@@ -1,70 +1,171 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
+import { getSupabase } from "@/lib/supabase";
 import {
   ArrowLeft,
-  BookOpen,
-  CheckCircle2,
+  ImagePlus,
   LockKeyhole,
   PenLine,
+  Trash2,
   Turtle,
 } from "lucide-react";
 
 type Category = "free" | "tips" | "question";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+type SelectedImage = {
+  id: string;
+  file: File;
+  preview: string;
+};
+
+const BUCKET = "tortoise-post-images";
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
+
+const EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 export default function CommunityWritePage() {
   const router = useRouter();
+  const supabase = getSupabase();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagesRef = useRef<SelectedImage[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const [category, setCategory] = useState<Category>("free");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [images, setImages] = useState<SelectedImage[]>([]);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
+  useEffect(() => {
+    return () => {
+      imagesRef.current.forEach((image) => {
+        URL.revokeObjectURL(image.preview);
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!supabase) {
+      setError("Supabase 연결 설정을 확인해 주세요.");
+      setLoading(false);
+      return;
+    }
+
     let active = true;
 
     async function checkLogin() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data } = await supabase!.auth.getUser();
 
       if (!active) return;
 
-      setUserId(user?.id ?? null);
+      setUser(data.user ?? null);
       setLoading(false);
     }
 
     checkLogin();
 
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (active) setUser(session?.user ?? null);
+      }
+    );
+
     return () => {
       active = false;
+      subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
+
+  function handleFiles(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const selected = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    if (!selected.length) return;
+
+    setError("");
+
+    if (images.length + selected.length > MAX_FILES) {
+      setError(`사진은 최대 ${MAX_FILES}장까지 첨부할 수 있습니다.`);
+      return;
+    }
+
+    for (const file of selected) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setError("JPG, PNG, WEBP 사진만 첨부할 수 있습니다.");
+        return;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        setError("사진 1장의 크기는 5MB 이하여야 합니다.");
+        return;
+      }
+
+      if (file.size === 0) {
+        setError("비어 있는 파일은 첨부할 수 없습니다.");
+        return;
+      }
+    }
+
+    const nextImages = selected.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setImages((previous) => [...previous, ...nextImages]);
+  }
+
+  function removeImage(id: string) {
+    setImages((previous) => {
+      const target = previous.find((image) => image.id === id);
+
+      if (target) {
+        URL.revokeObjectURL(target.preview);
+      }
+
+      return previous.filter((image) => image.id !== id);
+    });
+  }
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
-    setError("");
 
-    if (!userId) {
-      setError("로그인 후 글을 작성할 수 있습니다.");
-      return;
-    }
+    if (!supabase || saving) return;
+
+    setError("");
+    setStatus("");
 
     const cleanTitle = title.trim();
     const cleanContent = content.trim();
@@ -74,50 +175,103 @@ export default function CommunityWritePage() {
       return;
     }
 
-    if (
-      cleanContent.length < 1 ||
-      cleanContent.length > 20000
-    ) {
+    if (!cleanContent || cleanContent.length > 20000) {
       setError("본문은 1~20,000자로 입력해 주세요.");
       return;
     }
 
     setSaving(true);
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { data: authData, error: authError } =
+      await supabase.auth.getUser();
 
-    if (authError || !user) {
+    if (authError || !authData.user) {
       setSaving(false);
-      setUserId(null);
-      setError("로그인 상태를 확인할 수 없습니다. 다시 로그인해 주세요.");
+      setUser(null);
+      setError("로그인 후 게시글을 작성할 수 있습니다.");
       return;
     }
 
-    const { data, error: insertError } = await supabase
-      .from("tortoise_posts")
-      .insert({
-        author_id: user.id,
-        category,
-        title: cleanTitle,
-        content: cleanContent,
-      })
-      .select("id")
-      .single();
+    const currentUser = authData.user;
+    const uploadedPaths: string[] = [];
 
-    setSaving(false);
+    try {
+      // 사진을 먼저 업로드합니다.
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        const extension = EXTENSIONS[image.file.type];
 
-    if (insertError || !data) {
-      setError(
-        "게시글 저장에 실패했습니다. 잠시 후 다시 시도해 주세요."
-      );
-      return;
+        const path =
+          `${currentUser.id}/${crypto.randomUUID()}.${extension}`;
+
+        setStatus(
+          `사진 업로드 중... (${i + 1}/${images.length})`
+        );
+
+        const { error: uploadError } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, image.file, {
+            contentType: image.file.type,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(
+            `사진 업로드 실패: ${uploadError.message}`
+          );
+        }
+
+        uploadedPaths.push(path);
+      }
+
+      setStatus("게시글 저장 중...");
+
+      const { data, error: insertError } = await supabase
+        .from("tortoise_posts")
+        .insert({
+          author_id: currentUser.id,
+          category,
+          title: cleanTitle,
+          content: cleanContent,
+          image_paths: uploadedPaths,
+        })
+        .select("id")
+        .single();
+
+      if (insertError || !data) {
+        throw new Error(
+          insertError?.message ?? "게시글 저장에 실패했습니다."
+        );
+      }
+
+      router.push(`/community/${data.id}`);
+      router.refresh();
+    } catch (caught) {
+      // 게시글 저장에 실패하면 이번에 올린 사진을 정리합니다.
+      if (uploadedPaths.length) {
+        const { error: cleanupError } =
+          await supabase.storage
+            .from(BUCKET)
+            .remove(uploadedPaths);
+
+        if (cleanupError) {
+          console.error(
+            "업로드 사진 정리 실패:",
+            cleanupError.message
+          );
+        }
+      }
+
+      const message =
+        caught instanceof Error
+          ? caught.message
+          : "게시글 등록 중 오류가 발생했습니다.";
+
+      setError(message);
+    } finally {
+      setSaving(false);
+      setStatus("");
     }
-
-    router.push(`/community/${data.id}`);
-    router.refresh();
   }
 
   return (
@@ -143,35 +297,32 @@ export default function CommunityWritePage() {
         </h1>
 
         <p className="mt-4 text-sm leading-7 text-[#687c6b]">
-          거북이와 함께한 일상과 사육 경험을 나눠주세요.
+          거북이와 함께한 일상과 사진을 공유해 주세요.
         </p>
       </section>
 
       {loading ? (
-        <div className="mt-8 rounded-[24px] border border-[#e3e9df] bg-white px-6 py-16 text-center">
-          <p className="text-sm text-[#819482]">
-            로그인 상태를 확인하고 있습니다...
-          </p>
+        <div className="mt-8 rounded-3xl bg-white p-12 text-center">
+          로그인 상태를 확인하는 중입니다...
         </div>
-      ) : !userId ? (
-        <section className="mt-8 rounded-[24px] border border-[#e3e9df] bg-white px-7 py-14 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#edf4e9] text-[#668b6c]">
-            <LockKeyhole size={30} />
-          </div>
+      ) : !user ? (
+        <section className="mt-8 rounded-3xl bg-white px-7 py-14 text-center">
+          <LockKeyhole
+            size={32}
+            className="mx-auto text-[#668b6c]"
+          />
 
           <h2 className="font-hand mt-5 text-3xl">
             글쓰기는 회원만 가능해요
           </h2>
 
-          <p className="mt-4 text-sm leading-7 text-[#718573]">
-            게시글과 댓글은 누구나 읽을 수 있지만,
-            <br />
-            새 게시글을 작성하려면 로그인이 필요합니다.
+          <p className="mt-4 text-sm text-[#718573]">
+            로그인 후 게시글과 사진을 등록할 수 있습니다.
           </p>
 
           <Link
             href="/login"
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white"
+            className="mt-7 inline-flex rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white"
           >
             로그인하러 가기
           </Link>
@@ -195,12 +346,11 @@ export default function CommunityWritePage() {
               onChange={(event) =>
                 setCategory(event.target.value as Category)
               }
-              className="w-full rounded-xl border border-[#dce7d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#8cad8c]"
+              disabled={saving}
+              className="w-full rounded-xl border border-[#dce7d8] bg-white px-4 py-3 text-sm"
             >
               <option value="free">자유게시판</option>
-              <option value="tips">
-                정보 및 TIP 공유하기
-              </option>
+              <option value="tips">정보 및 TIP 공유하기</option>
               <option value="question">질문</option>
             </select>
           </div>
@@ -219,6 +369,7 @@ export default function CommunityWritePage() {
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               maxLength={100}
+              disabled={saving}
               placeholder="제목을 입력해 주세요"
               className="w-full rounded-xl border border-[#dce7d8] px-4 py-3 text-sm outline-none focus:border-[#8cad8c]"
               required
@@ -240,10 +391,13 @@ export default function CommunityWritePage() {
             <textarea
               id="content"
               value={content}
-              onChange={(event) => setContent(event.target.value)}
+              onChange={(event) =>
+                setContent(event.target.value)
+              }
               maxLength={20000}
-              rows={13}
-              placeholder="거북이와 함께한 이야기를 자유롭게 작성해 주세요."
+              rows={12}
+              disabled={saving}
+              placeholder="거북이와 함께한 이야기를 작성해 주세요."
               className="w-full resize-y rounded-xl border border-[#dce7d8] px-4 py-4 text-sm leading-7 outline-none focus:border-[#8cad8c]"
               required
             />
@@ -253,17 +407,74 @@ export default function CommunityWritePage() {
             </p>
           </div>
 
-          <div className="rounded-xl bg-[#f1f6ed] p-5">
-            <div className="flex items-center gap-2 text-sm font-bold text-[#62866a]">
-              <BookOpen size={18} />
-              게시글 작성 안내
+          {/* 사진 첨부 */}
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <label className="text-sm font-bold">
+                사진 첨부
+              </label>
+
+              <span className="text-xs text-[#9baa99]">
+                {images.length} / {MAX_FILES}장
+              </span>
             </div>
 
-            <p className="mt-3 text-sm leading-7 text-[#718573]">
-              서로를 존중하는 표현을 사용해 주세요.
-              사육 정보는 가능한 한 경험과 근거를 구분해서
-              작성해 주세요.
-            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              disabled={saving}
+              onChange={handleFiles}
+              className="hidden"
+              aria-label="게시글 사진 선택"
+            />
+
+            <button
+              type="button"
+              disabled={saving || images.length >= MAX_FILES}
+              onClick={() => fileInputRef.current?.click()}
+              className="flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#cddfca] bg-[#f8fbf6] px-5 py-10 text-[#719273] transition hover:bg-[#f0f7ed] disabled:opacity-50"
+            >
+              <ImagePlus size={32} />
+
+              <span className="mt-3 text-sm font-bold">
+                사진 선택하기
+              </span>
+
+              <span className="mt-2 text-xs text-[#91a391]">
+                JPG, PNG, WEBP · 1장당 5MB 이하
+              </span>
+            </button>
+
+            {images.length > 0 && (
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {images.map((image) => (
+                  <div
+                    key={image.id}
+                    className="relative aspect-square overflow-hidden rounded-2xl bg-[#eef3ea]"
+                  >
+                    <Image
+                      src={image.preview}
+                      alt={image.file.name}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => removeImage(image.id)}
+                      aria-label={`${image.file.name} 제거`}
+                      className="absolute right-2 top-2 rounded-full bg-white/95 p-2 text-red-500 shadow-sm disabled:opacity-50"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {error && (
@@ -272,6 +483,15 @@ export default function CommunityWritePage() {
               className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
             >
               {error}
+            </p>
+          )}
+
+          {status && (
+            <p
+              role="status"
+              className="rounded-xl bg-[#edf4e9] px-4 py-3 text-sm text-[#62866a]"
+            >
+              {status}
             </p>
           )}
 
@@ -286,16 +506,10 @@ export default function CommunityWritePage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#527558] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#527558] disabled:opacity-50"
             >
-              {saving ? (
-                "저장 중..."
-              ) : (
-                <>
-                  <PenLine size={17} />
-                  게시글 등록
-                </>
-              )}
+              <PenLine size={17} />
+              {saving ? "등록 중..." : "게시글 등록"}
             </button>
           </div>
         </form>
