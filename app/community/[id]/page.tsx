@@ -3,12 +3,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import {
   ArrowLeft,
   CalendarDays,
+  ImageIcon,
   LockKeyhole,
   MessageCircle,
   Pencil,
@@ -25,6 +27,7 @@ type Post = {
   category: Category;
   title: string;
   content: string;
+  image_paths: string[];
   created_at: string;
   updated_at: string;
 };
@@ -39,14 +42,16 @@ type Comment = {
   updated_at: string;
 };
 
+const BUCKET = "tortoise-post-images";
+
 const categoryNames: Record<Category, string> = {
   free: "자유게시판",
   tips: "정보 및 TIP 공유하기",
   question: "질문",
 };
 
-function formatDate(date: string) {
-  return new Date(date).toLocaleString("ko-KR", {
+function formatDate(value: string) {
+  return new Date(value).toLocaleString("ko-KR", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -57,15 +62,14 @@ function formatDate(date: string) {
 
 function getNickname(user: User) {
   const metadata = user.user_metadata;
-
-  const name =
+  const value =
     metadata?.nickname ||
     metadata?.display_name ||
     metadata?.name ||
     user.email?.split("@")[0] ||
     "회원";
 
-  return String(name).trim().slice(0, 20) || "회원";
+  return String(value).trim().slice(0, 20) || "회원";
 }
 
 export default function CommunityPostPage() {
@@ -81,6 +85,7 @@ export default function CommunityPostPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
+  const [commentError, setCommentError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const [editingPost, setEditingPost] = useState(false);
@@ -90,7 +95,6 @@ export default function CommunityPostPage() {
   const [postContent, setPostContent] = useState("");
 
   const [commentText, setCommentText] = useState("");
-  const [commentError, setCommentError] = useState("");
   const [editingCommentId, setEditingCommentId] =
     useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] =
@@ -113,7 +117,7 @@ export default function CommunityPostPage() {
           supabase!
             .from("tortoise_posts")
             .select(
-              "id, author_id, category, title, content, created_at, updated_at"
+              "id, author_id, category, title, content, image_paths, created_at, updated_at"
             )
             .eq("id", postId)
             .maybeSingle(),
@@ -136,11 +140,14 @@ export default function CommunityPostPage() {
       } else if (!postResult.data) {
         setError("존재하지 않거나 삭제된 게시글입니다.");
       } else {
-        const loadedPost = postResult.data as Post;
-        setPost(loadedPost);
-        setPostCategory(loadedPost.category);
-        setPostTitle(loadedPost.title);
-        setPostContent(loadedPost.content);
+        const loaded = postResult.data as Post;
+        setPost({
+          ...loaded,
+          image_paths: loaded.image_paths ?? [],
+        });
+        setPostCategory(loaded.category);
+        setPostTitle(loaded.title);
+        setPostContent(loaded.content);
       }
 
       if (commentResult.error) {
@@ -157,9 +164,11 @@ export default function CommunityPostPage() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) setUser(session?.user ?? null);
-    });
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (active) setUser(session?.user ?? null);
+      }
+    );
 
     return () => {
       active = false;
@@ -170,16 +179,15 @@ export default function CommunityPostPage() {
   async function verifyOwner(authorId: string) {
     if (!supabase) return false;
 
-    const { data, error: authError } =
-      await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
 
-    return !authError && data.user?.id === authorId;
+    return !error && data.user?.id === authorId;
   }
 
   async function refreshComments() {
     if (!supabase) return;
 
-    const { data, error: fetchError } = await supabase
+    const { data, error } = await supabase
       .from("tortoise_comments")
       .select(
         "id, post_id, author_id, nickname, content, created_at, updated_at"
@@ -187,12 +195,19 @@ export default function CommunityPostPage() {
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
 
-    if (fetchError) {
+    if (error) {
       setCommentError("댓글 목록을 불러오지 못했습니다.");
-      return;
+    } else {
+      setComments((data ?? []) as Comment[]);
     }
+  }
 
-    setComments((data ?? []) as Comment[]);
+  function getImageUrl(path: string) {
+    if (!supabase) return "";
+
+    return supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(path).data.publicUrl;
   }
 
   function startPostEdit() {
@@ -205,10 +220,12 @@ export default function CommunityPostPage() {
     setEditingPost(true);
   }
 
-  async function savePostEdit(event: React.FormEvent<HTMLFormElement>) {
+  async function savePostEdit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
-    if (!supabase || !post || !user) return;
+    if (!supabase || !post || saving) return;
 
     const title = postTitle.trim();
     const content = postContent.trim();
@@ -218,8 +235,8 @@ export default function CommunityPostPage() {
       return;
     }
 
-    if (content.length < 1 || content.length > 20000) {
-      setActionError("내용은 1~20,000자로 입력해 주세요.");
+    if (!content || content.length > 20000) {
+      setActionError("본문은 1~20,000자로 입력해 주세요.");
       return;
     }
 
@@ -232,7 +249,7 @@ export default function CommunityPostPage() {
       return;
     }
 
-    const { data, error: updateError } = await supabase
+    const { data, error } = await supabase
       .from("tortoise_posts")
       .update({
         category: postCategory,
@@ -243,27 +260,32 @@ export default function CommunityPostPage() {
       .eq("id", post.id)
       .eq("author_id", post.author_id)
       .select(
-        "id, author_id, category, title, content, created_at, updated_at"
+        "id, author_id, category, title, content, image_paths, created_at, updated_at"
       )
       .single();
 
     setSaving(false);
 
-    if (updateError || !data) {
+    if (error || !data) {
       setActionError("게시글 수정에 실패했습니다.");
       return;
     }
 
-    setPost(data as Post);
+    setPost({
+      ...(data as Post),
+      image_paths: data.image_paths ?? [],
+    });
     setEditingPost(false);
   }
 
   async function deletePost() {
-    if (!supabase || !post || !user) return;
+    if (!supabase || !post || saving) return;
 
-    if (!window.confirm(
-      "게시글을 삭제하면 댓글도 함께 삭제됩니다. 정말 삭제하시겠습니까?"
-    )) {
+    if (
+      !window.confirm(
+        "게시글을 삭제하면 댓글도 삭제됩니다. 정말 삭제하시겠습니까?"
+      )
+    ) {
       return;
     }
 
@@ -276,7 +298,7 @@ export default function CommunityPostPage() {
       return;
     }
 
-    const { data, error: deleteError } = await supabase
+    const { data, error } = await supabase
       .from("tortoise_posts")
       .delete()
       .eq("id", post.id)
@@ -285,11 +307,12 @@ export default function CommunityPostPage() {
 
     setSaving(false);
 
-    if (deleteError || !data?.length) {
+    if (error || !data?.length) {
       setActionError("게시글 삭제에 실패했습니다.");
       return;
     }
 
+    // Storage 파일 정리는 후속 단계에서 구현합니다.
     router.push("/community");
     router.refresh();
   }
@@ -299,7 +322,7 @@ export default function CommunityPostPage() {
   ) {
     event.preventDefault();
 
-    if (!supabase) return;
+    if (!supabase || saving) return;
 
     const text = commentText.trim();
 
@@ -311,28 +334,28 @@ export default function CommunityPostPage() {
     setSaving(true);
     setCommentError("");
 
-    const { data: authData, error: authError } =
+    const { data, error: authError } =
       await supabase.auth.getUser();
 
-    if (authError || !authData.user) {
+    if (authError || !data.user) {
       setSaving(false);
       setUser(null);
       setCommentError("로그인 후 댓글을 작성할 수 있습니다.");
       return;
     }
 
-    const { error: insertError } = await supabase
+    const { error } = await supabase
       .from("tortoise_comments")
       .insert({
         post_id: postId,
-        author_id: authData.user.id,
-        nickname: getNickname(authData.user),
+        author_id: data.user.id,
+        nickname: getNickname(data.user),
         content: text,
       });
 
     setSaving(false);
 
-    if (insertError) {
+    if (error) {
       setCommentError("댓글 저장에 실패했습니다.");
       return;
     }
@@ -342,7 +365,7 @@ export default function CommunityPostPage() {
   }
 
   async function saveCommentEdit(comment: Comment) {
-    if (!supabase || !user || !comment.author_id) return;
+    if (!supabase || !comment.author_id || saving) return;
 
     const text = editingCommentText.trim();
 
@@ -360,7 +383,7 @@ export default function CommunityPostPage() {
       return;
     }
 
-    const { error: updateError } = await supabase
+    const { error } = await supabase
       .from("tortoise_comments")
       .update({
         content: text,
@@ -371,7 +394,7 @@ export default function CommunityPostPage() {
 
     setSaving(false);
 
-    if (updateError) {
+    if (error) {
       setCommentError("댓글 수정에 실패했습니다.");
       return;
     }
@@ -382,7 +405,7 @@ export default function CommunityPostPage() {
   }
 
   async function deleteComment(comment: Comment) {
-    if (!supabase || !user || !comment.author_id) return;
+    if (!supabase || !comment.author_id || saving) return;
 
     if (!window.confirm("이 댓글을 삭제하시겠습니까?")) {
       return;
@@ -397,7 +420,7 @@ export default function CommunityPostPage() {
       return;
     }
 
-    const { data, error: deleteError } = await supabase
+    const { data, error } = await supabase
       .from("tortoise_comments")
       .delete()
       .eq("id", comment.id)
@@ -406,7 +429,7 @@ export default function CommunityPostPage() {
 
     setSaving(false);
 
-    if (deleteError || !data?.length) {
+    if (error || !data?.length) {
       setCommentError("댓글 삭제에 실패했습니다.");
       return;
     }
@@ -428,11 +451,11 @@ export default function CommunityPostPage() {
       </Link>
 
       {loading ? (
-        <div className="mt-8 rounded-[24px] bg-white p-12 text-center">
+        <div className="mt-8 rounded-3xl bg-white p-12 text-center">
           게시글을 불러오는 중입니다...
         </div>
       ) : error || !post ? (
-        <section className="mt-8 rounded-[24px] bg-white p-12 text-center">
+        <section className="mt-8 rounded-3xl bg-white p-12 text-center">
           <Turtle
             size={42}
             className="mx-auto text-[#9db69d]"
@@ -449,7 +472,10 @@ export default function CommunityPostPage() {
           <article className="mt-8 overflow-hidden rounded-[24px] border border-[#e3e9df] bg-white shadow-sm">
             <header className="border-b border-[#edf0e9] bg-[#f5f9f2] px-6 py-9 md:px-10">
               {editingPost ? (
-                <form onSubmit={savePostEdit} className="space-y-5">
+                <form
+                  onSubmit={savePostEdit}
+                  className="space-y-5"
+                >
                   <h1 className="font-hand text-3xl">
                     게시글 수정
                   </h1>
@@ -519,7 +545,7 @@ export default function CommunityPostPage() {
                   </div>
 
                   {actionError && (
-                    <p role="alert" className="text-sm text-red-600">
+                    <p className="text-sm text-red-600">
                       {actionError}
                     </p>
                   )}
@@ -536,7 +562,6 @@ export default function CommunityPostPage() {
                     >
                       취소
                     </button>
-
                     <button
                       type="submit"
                       disabled={saving}
@@ -588,10 +613,7 @@ export default function CommunityPostPage() {
                   </div>
 
                   {actionError && (
-                    <p
-                      role="alert"
-                      className="mt-4 text-sm text-red-600"
-                    >
+                    <p className="mt-4 text-sm text-red-600">
                       {actionError}
                     </p>
                   )}
@@ -600,12 +622,51 @@ export default function CommunityPostPage() {
             </header>
 
             {!editingPost && (
-              <div className="min-h-[250px] whitespace-pre-wrap break-words px-6 py-10 text-sm leading-8 md:px-10 md:text-base">
-                {post.content}
+              <div className="px-6 py-10 md:px-10">
+                <div className="min-h-[120px] whitespace-pre-wrap break-words text-sm leading-8 md:text-base">
+                  {post.content}
+                </div>
+
+                {/* 첨부 사진 표시 */}
+                {post.image_paths.length > 0 && (
+                  <section className="mt-9 border-t border-[#edf0e9] pt-8">
+                    <div className="mb-5 flex items-center gap-2 text-[#668b6c]">
+                      <ImageIcon size={20} />
+                      <h2 className="text-sm font-bold">
+                        첨부 사진 {post.image_paths.length}장
+                      </h2>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {post.image_paths.map((path, index) => (
+                        <a
+                          key={`${path}-${index}`}
+                          href={getImageUrl(path)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block overflow-hidden rounded-2xl border border-[#e3e9df] bg-[#f4f7f1]"
+                          aria-label={`첨부 사진 ${index + 1} 크게 보기`}
+                        >
+                          <div className="relative aspect-[4/3]">
+                            <Image
+                              src={getImageUrl(path)}
+                              alt={`게시글 첨부 사진 ${index + 1}`}
+                              fill
+                              unoptimized
+                              sizes="(max-width: 640px) 100vw, 50vw"
+                              className="object-contain"
+                            />
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
             )}
           </article>
 
+          {/* 댓글 영역 */}
           <section className="mt-8 rounded-[24px] border border-[#e3e9df] bg-white px-6 py-9 md:px-10">
             <div className="flex items-center gap-2">
               <MessageCircle
@@ -655,9 +716,7 @@ export default function CommunityPostPage() {
                               disabled={saving}
                               onClick={() => {
                                 setEditingCommentId(comment.id);
-                                setEditingCommentText(
-                                  comment.content
-                                );
+                                setEditingCommentText(comment.content);
                               }}
                               className="inline-flex items-center gap-1 text-xs text-[#668b6c]"
                             >
@@ -683,9 +742,7 @@ export default function CommunityPostPage() {
                           <textarea
                             value={editingCommentText}
                             onChange={(event) =>
-                              setEditingCommentText(
-                                event.target.value
-                              )
+                              setEditingCommentText(event.target.value)
                             }
                             maxLength={2000}
                             rows={4}
@@ -695,6 +752,7 @@ export default function CommunityPostPage() {
                           <div className="mt-3 flex justify-end gap-3">
                             <button
                               type="button"
+                              disabled={saving}
                               onClick={() =>
                                 setEditingCommentId(null)
                               }
@@ -702,7 +760,6 @@ export default function CommunityPostPage() {
                             >
                               취소
                             </button>
-
                             <button
                               type="button"
                               disabled={saving}
