@@ -107,6 +107,7 @@ export default function MyPage() {
     }
 
     const currentUser = authData.user;
+
     setUser(currentUser);
     setNickname(nicknameOf(currentUser));
 
@@ -151,7 +152,8 @@ export default function MyPage() {
     setMyPosts((postsResult.data ?? []) as Post[]);
 
     const likes = (likesResult.data ?? []) as Like[];
-    const comments = (commentsResult.data ?? []) as Comment[];
+    const comments =
+      (commentsResult.data ?? []) as Comment[];
 
     setMyComments(comments);
 
@@ -177,8 +179,11 @@ export default function MyPage() {
         setError(
           "좋아요한 글과 댓글 원문을 불러오지 못했습니다."
         );
+        setMyLikes([]);
+        setCommentPosts({});
       } else {
         const postList = (relatedPosts ?? []) as Post[];
+
         const postMap = new Map(
           postList.map((item) => [item.id, item])
         );
@@ -191,7 +196,10 @@ export default function MyPage() {
 
         setCommentPosts(
           Object.fromEntries(
-            postList.map((item) => [item.id, item.title])
+            postList.map((item) => [
+              item.id,
+              item.title,
+            ])
           )
         );
       }
@@ -207,7 +215,9 @@ export default function MyPage() {
     void loadData();
   }, [loadData]);
 
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+  async function saveProfile(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
     if (!supabase || !user || saving) return;
@@ -225,24 +235,30 @@ export default function MyPage() {
     setSaving(true);
     setMessage("");
 
-    const { data, error: updateError } =
-      await supabase.auth.updateUser({
-        data: {
-          nickname: nextNickname,
-          display_name: nextNickname,
-        },
-      });
+    try {
+      const { data, error: updateError } =
+        await supabase.auth.updateUser({
+          data: {
+            nickname: nextNickname,
+            display_name: nextNickname,
+          },
+        });
 
-    if (updateError) {
+      if (updateError) {
+        setMessage(
+          "닉네임 변경에 실패했습니다. 다시 시도해 주세요."
+        );
+      } else if (data.user) {
+        setUser(data.user);
+        setMessage("닉네임이 변경되었습니다.");
+      }
+    } catch {
       setMessage(
-        "닉네임 변경에 실패했습니다. 다시 시도해 주세요."
+        "닉네임 변경 중 오류가 발생했습니다."
       );
-    } else if (data.user) {
-      setUser(data.user);
-      setMessage("닉네임이 변경되었습니다.");
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   const tabs: {
@@ -272,40 +288,49 @@ export default function MyPage() {
   ];
 
   return (
-    <main className="container-site min-h-screen pb-24 pt-9 text-[#405a46]">
+    <main className="container-site min-h-screen min-w-0 pb-28 pt-5 text-[#405a46] sm:pt-9 md:pb-24">
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-[#62866a]"
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#62866a]"
       >
         <ArrowLeft size={17} />
         홈으로 돌아가기
       </Link>
 
-      <section className="mt-7 rounded-[28px] bg-[#eaf2e4] px-7 py-11 md:px-12">
+      {/* 마이페이지 소개 */}
+      <section className="mt-4 rounded-[22px] bg-[#eaf2e4] px-5 py-8 sm:mt-7 sm:rounded-[28px] sm:px-7 sm:py-11 md:px-12">
         <div className="flex items-center gap-2 text-[#62866a]">
-          <Turtle size={24} />
-          <span className="text-xs font-bold tracking-widest">
+          <Turtle
+            size={22}
+            className="shrink-0 sm:h-6 sm:w-6"
+          />
+
+          <span className="text-[11px] font-bold tracking-[0.14em] sm:text-xs sm:tracking-widest">
             MY TORTOISE
           </span>
         </div>
 
-        <h1 className="font-hand mt-5 text-4xl md:text-5xl">
+        <h1 className="font-hand mt-4 break-keep text-[30px] leading-tight sm:mt-5 sm:text-4xl md:text-5xl">
           나의 거북이 공간
         </h1>
 
-        <p className="mt-4 text-sm leading-7 text-[#718573]">
+        <p className="mt-3 break-keep text-[13px] leading-7 text-[#718573] sm:mt-4 sm:text-sm">
           조금 느리면 어때.
           <br />
           내가 남긴 이야기와 소중한 기록을 모아보세요.
         </p>
       </section>
 
+      {/* 로그인 상태 */}
       {loading ? (
-        <div className="mt-8 rounded-3xl bg-white p-12 text-center text-sm">
+        <div
+          role="status"
+          className="mt-6 rounded-2xl bg-white px-4 py-12 text-center text-sm text-[#829482] sm:mt-8 sm:rounded-3xl"
+        >
           회원 정보를 불러오는 중입니다...
         </div>
       ) : !user ? (
-        <section className="mt-8 rounded-3xl border border-[#e3e9df] bg-white p-10 text-center">
+        <section className="mt-6 rounded-[22px] border border-[#e3e9df] bg-white px-5 py-12 text-center sm:mt-8 sm:rounded-3xl sm:p-10">
           <LogIn
             size={35}
             className="mx-auto text-[#719273]"
@@ -315,42 +340,43 @@ export default function MyPage() {
             로그인이 필요해요
           </h2>
 
-          <p className="mt-3 text-sm text-[#829482]">
+          <p className="mt-3 break-keep text-[13px] leading-7 text-[#829482] sm:text-sm">
             마이페이지는 로그인한 회원만 이용할 수 있습니다.
           </p>
 
           <Link
             href="/login"
-            className="mt-6 inline-flex rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white"
+            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white"
           >
             로그인하기
           </Link>
         </section>
       ) : (
         <>
-          <section className="mt-8 grid gap-5 lg:grid-cols-[1fr_1.4fr]">
-            <div className="rounded-3xl border border-[#e3e9df] bg-white p-7">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eaf2e4] text-[#668b6c]">
-                  <UserRound size={30} />
+          {/* 회원 정보 및 프로필 */}
+          <section className="mt-6 grid gap-4 sm:mt-8 sm:gap-5 lg:grid-cols-[1fr_1.4fr]">
+            <div className="min-w-0 rounded-[22px] border border-[#e3e9df] bg-white p-5 sm:rounded-3xl sm:p-7">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#eaf2e4] text-[#668b6c] sm:h-16 sm:w-16">
+                  <UserRound size={29} />
                 </div>
 
-                <div className="min-w-0">
-                  <p className="text-xs text-[#91a291]">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] text-[#91a291] sm:text-xs">
                     거북이처럼 회원
                   </p>
 
-                  <h2 className="font-hand mt-1 break-words text-2xl">
+                  <h2 className="font-hand mt-1 break-words text-[23px] leading-snug sm:text-2xl">
                     {nicknameOf(user)}
                   </h2>
 
-                  <p className="mt-1 break-all text-xs text-[#91a291]">
+                  <p className="mt-1 break-all text-[11px] leading-5 text-[#91a291] sm:text-xs">
                     {user.email}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 flex items-center gap-2 border-t border-[#edf0e9] pt-5 text-xs text-[#829482]">
+              <div className="mt-5 flex items-center gap-2 border-t border-[#edf0e9] pt-4 text-xs text-[#829482] sm:mt-6 sm:pt-5">
                 <CalendarDays size={15} />
                 가입일 {formatDate(user.created_at)}
               </div>
@@ -358,27 +384,30 @@ export default function MyPage() {
 
             <form
               onSubmit={saveProfile}
-              className="rounded-3xl border border-[#e3e9df] bg-white p-7"
+              className="min-w-0 rounded-[22px] border border-[#e3e9df] bg-white p-5 sm:rounded-3xl sm:p-7"
             >
               <div className="flex items-center gap-2">
                 <Pencil
                   size={19}
                   className="text-[#719273]"
                 />
-                <h2 className="font-hand text-2xl">
+
+                <h2 className="font-hand text-[23px] sm:text-2xl">
                   프로필 설정
                 </h2>
               </div>
 
               <label
                 htmlFor="nickname"
-                className="mt-6 block text-sm font-bold"
+                className="mt-5 block text-sm font-bold sm:mt-6"
               >
                 닉네임
               </label>
 
               <input
                 id="nickname"
+                type="text"
+                autoComplete="nickname"
                 value={nickname}
                 onChange={(event) =>
                   setNickname(event.target.value)
@@ -386,17 +415,19 @@ export default function MyPage() {
                 maxLength={20}
                 minLength={2}
                 required
-                className="mt-2 w-full rounded-xl border border-[#dce7d8] px-4 py-3 text-sm outline-none focus:border-[#668b6c]"
+                disabled={saving}
+                className="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-[#dce7d8] bg-white px-4 py-3 text-base outline-none focus:border-[#668b6c] disabled:opacity-60 sm:text-sm"
               />
 
-              <p className="mt-2 text-xs text-[#91a291]">
+              <p className="mt-2 text-xs leading-6 text-[#91a291]">
                 2~20자 · 로그인 계정의 프로필에 저장됩니다.
               </p>
 
               {message && (
                 <p
                   role="status"
-                  className="mt-4 text-sm text-[#64866a]"
+                  aria-live="polite"
+                  className="mt-4 break-words rounded-xl bg-[#edf5e8] p-3 text-sm leading-6 text-[#64866a]"
                 >
                   {message}
                 </p>
@@ -405,7 +436,7 @@ export default function MyPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#668b6c] px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
+                className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#668b6c] px-6 py-3 text-sm font-bold text-white disabled:opacity-50 sm:w-auto sm:rounded-full"
               >
                 <Save size={16} />
                 {saving ? "저장 중..." : "프로필 저장"}
@@ -416,37 +447,49 @@ export default function MyPage() {
           {error && (
             <p
               role="alert"
-              className="mt-6 rounded-xl bg-red-50 p-4 text-sm text-red-600"
+              className="mt-6 break-words rounded-xl bg-red-50 p-4 text-sm leading-6 text-red-600"
             >
               {error}
             </p>
           )}
 
-          <section className="mt-8 grid grid-cols-3 gap-3">
+          {/* 회원 활동 탭 */}
+          <section
+            aria-label="나의 활동"
+            className="mt-6 grid grid-cols-3 gap-2 sm:mt-8 sm:gap-3"
+          >
             {tabs.map((item) => {
               const Icon = item.icon;
+              const active = tab === item.id;
 
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => setTab(item.id)}
-                  className={`rounded-2xl border p-4 text-center transition ${
-                    tab === item.id
+                  aria-pressed={active}
+                  className={`flex min-h-[104px] min-w-0 flex-col items-center justify-center rounded-2xl border px-2 py-3 text-center transition sm:min-h-[120px] sm:p-4 ${
+                    active
                       ? "border-[#668b6c] bg-[#edf5e8]"
                       : "border-[#e3e9df] bg-white"
                   }`}
                 >
                   <Icon
-                    size={21}
-                    className="mx-auto text-[#719273]"
+                    size={20}
+                    className="mx-auto text-[#719273] sm:h-[21px] sm:w-[21px]"
                   />
 
-                  <p className="mt-3 text-xl font-bold">
+                  <p className="mt-2 text-lg font-bold sm:mt-3 sm:text-xl">
                     {item.count}
                   </p>
 
-                  <p className="mt-1 text-xs text-[#829482]">
+                  <p
+                    className={`mt-1 break-keep text-[11px] leading-4 sm:text-xs ${
+                      active
+                        ? "font-bold text-[#64866a]"
+                        : "text-[#829482]"
+                    }`}
+                  >
                     {item.label}
                   </p>
                 </button>
@@ -454,15 +497,16 @@ export default function MyPage() {
             })}
           </section>
 
-          <section className="mt-8 overflow-hidden rounded-3xl border border-[#e3e9df] bg-white">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0e9] p-6">
-              <h2 className="font-hand text-2xl">
+          {/* 회원 활동 목록 */}
+          <section className="mt-6 min-w-0 overflow-hidden rounded-[22px] border border-[#e3e9df] bg-white sm:mt-8 sm:rounded-3xl">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0e9] p-4 sm:p-6">
+              <h2 className="font-hand text-[23px] sm:text-2xl">
                 {tabs.find((item) => item.id === tab)?.label}
               </h2>
 
               <Link
                 href="/community"
-                className="text-xs font-bold text-[#668b6c]"
+                className="inline-flex min-h-10 items-center text-xs font-bold text-[#668b6c]"
               >
                 커뮤니티 바로가기
               </Link>
@@ -470,7 +514,7 @@ export default function MyPage() {
 
             {tab === "comments" ? (
               myComments.length === 0 ? (
-                <p className="p-12 text-center text-sm text-[#829482]">
+                <p className="px-4 py-12 text-center text-sm text-[#829482] sm:p-12">
                   아직 작성한 댓글이 없습니다.
                 </p>
               ) : (
@@ -479,18 +523,18 @@ export default function MyPage() {
                     <Link
                       key={comment.id}
                       href={`/community/${comment.post_id}`}
-                      className="block p-6 hover:bg-[#f8faf6]"
+                      className="block min-w-0 px-4 py-5 transition hover:bg-[#f8faf6] sm:p-6"
                     >
-                      <p className="text-xs text-[#91a291]">
+                      <p className="break-words text-xs leading-5 text-[#91a291]">
                         {commentPosts[comment.post_id] ??
                           "삭제되었거나 확인할 수 없는 게시글"}
                       </p>
 
-                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7">
+                      <p className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-6 text-[#405a46] sm:text-sm sm:leading-7">
                         {comment.content}
                       </p>
 
-                      <p className="mt-3 text-xs text-[#9aab99]">
+                      <p className="mt-3 text-[11px] text-[#9aab99] sm:text-xs">
                         {formatDate(comment.created_at)}
                       </p>
                     </Link>
@@ -504,7 +548,7 @@ export default function MyPage() {
 
                 if (items.length === 0) {
                   return (
-                    <p className="p-12 text-center text-sm text-[#829482]">
+                    <p className="px-4 py-12 text-center text-sm text-[#829482] sm:p-12">
                       {tab === "posts"
                         ? "아직 작성한 게시글이 없습니다."
                         : "아직 좋아요한 게시글이 없습니다."}
@@ -518,17 +562,17 @@ export default function MyPage() {
                       <Link
                         key={post.id}
                         href={`/community/${post.id}`}
-                        className="block p-6 transition hover:bg-[#f8faf6]"
+                        className="block min-w-0 px-4 py-5 transition hover:bg-[#f8faf6] sm:p-6"
                       >
-                        <span className="rounded-full bg-[#edf4e9] px-3 py-1 text-xs font-bold text-[#64866a]">
+                        <span className="inline-flex max-w-full rounded-full bg-[#edf4e9] px-3 py-1 text-[11px] font-bold text-[#64866a] sm:text-xs">
                           {categoryName(post.category)}
                         </span>
 
-                        <h3 className="mt-3 break-words text-base font-bold">
+                        <h3 className="mt-3 break-words text-[15px] font-bold leading-6 sm:text-base">
                           {post.title}
                         </h3>
 
-                        <p className="mt-3 text-xs text-[#91a291]">
+                        <p className="mt-3 text-[11px] text-[#91a291] sm:text-xs">
                           {formatDate(post.created_at)}
                         </p>
                       </Link>
