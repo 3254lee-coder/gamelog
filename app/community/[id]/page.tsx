@@ -1,192 +1,96 @@
-                        ? "border-[#efc5c8] bg-[#fff0f1] text-[#de7481]"
-                        : "border-[#dce7d8] bg-white text-[#718573] hover:bg-[#f5f9f2]"
-                    }`}
-                  >
-                    <Heart
-                      size={20}
-                      fill={
-                        isLiked
-                          ? "currentColor"
-                          : "none"
-                      }
-                    />
-                    {isLiked
-                      ? "좋아요 취소"
-                      : "좋아요"}
-                    <span>
-                      {
-                        likeCount.toLocaleString(
-                          "ko-KR"
-                        )
-                      }
-                    </span>
-                  </button>
+"use client";
 
-                  {!user && (
-                    <p className="mt-3 text-xs text-[#9baa99]">
-                      좋아요는 로그인 후
-                      누를 수 있습니다.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </article>
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
+import { getSupabase } from "@/lib/supabase";
+import {
+  ArrowLeft,
+  CalendarDays,
+  Eye,
+  Heart,
+  ImageIcon,
+  ImagePlus,
+  LockKeyhole,
+  MessageCircle,
+  Pencil,
+  Send,
+  Trash2,
+  Turtle,
+} from "lucide-react";
 
-          {/* 댓글 영역 */}
-          <section className="mt-5 min-w-0 rounded-[20px] border border-[#e3e9df] bg-white px-4 py-7 sm:mt-8 sm:rounded-[24px] sm:px-6 sm:py-9 md:px-10">
-            <div className="flex items-center gap-2">
-              <MessageCircle
-                size={23}
-                className="text-[#719273]"
-              />
-              <h2 className="font-hand text-2xl">
-                댓글 {comments.length}
-              </h2>
-            </div>
+type Category = "free" | "tips" | "question";
 
-            {commentError && (
-              <p
-                role="alert"
-                className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
-              >
-                {commentError}
-              </p>
-            )}
+type Post = {
+  id: string;
+  author_id: string;
+  category: Category;
+  title: string;
+  content: string;
+  image_paths: string[];
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+};
 
-            <div className="mt-7 divide-y divide-[#edf0e9]">
-              {comments.length === 0 ? (
-                <div className="rounded-2xl bg-[#f7faf5] px-5 py-10 text-center text-sm text-[#819482]">
-                  아직 댓글이 없어요.
-                  첫 댓글을 남겨주세요!
-                </div>
-              ) : (
-                comments.map(
-                  (comment) => {
-                    const isOwner =
-                      !!user &&
-                      comment.author_id ===
-                        user.id;
+type Comment = {
+  id: string;
+  post_id: string;
+  author_id: string | null;
+  nickname: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+};
 
-                    return (
-                      <div
-                        key={
-                          comment.id
-                        }
-                        className="min-w-0 py-5 sm:py-6"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-2 sm:items-center sm:gap-3">
-                          <div>
-                            <span className="text-sm font-bold">
-                              {
-                                comment.nickname
-                              }
-                            </span>
-                            <span className="ml-0 mt-1 block text-[11px] text-[#9baa99] sm:ml-3 sm:mt-0 sm:inline sm:text-xs">
-                              {formatDate(
-                                comment.created_at
-                              )}
-                            </span>
-                          </div>
+type NewImage = {
+  id: string;
+  file: File;
+  preview: string;
+};
 
-                          {isOwner && (
-                            <div className="flex items-center gap-2 sm:gap-3">
-                              <button
-                                type="button"
-                                disabled={
-                                  saving
-                                }
-                                onClick={() => {
-                                  setEditingCommentId(
-                                    comment.id
-                                  );
-                                  setEditingCommentText(
-                                    comment.content
-                                  );
-                                }}
-                                className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-xs text-[#668b6c]"
-                              >
-                                <Pencil
-                                  size={14}
-                                />
-                                수정
-                              </button>
+const BUCKET = "tortoise-post-images";
+const MAX_IMAGES = 5;
+const MAX_SIZE = 5 * 1024 * 1024;
+const VIEW_INTERVAL = 30 * 60 * 1000;
 
-                              <button
-                                type="button"
-                                disabled={
-                                  saving
-                                }
-                                onClick={() =>
-                                  deleteComment(
-                                    comment
-                                  )
-                                }
-                                className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-xs text-red-500"
-                              >
-                                <Trash2
-                                  size={14}
-                                />
-                                삭제
-                              </button>
-                            </div>
-                          )}
-                        </div>
+const EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
-                        {editingCommentId ===
-                        comment.id ? (
-                          <div className="mt-4">
-                            <textarea
-                              value={
-                                editingCommentText
-                              }
-                              onChange={(
-                                event
-                              ) =>
-                                setEditingCommentText(
-                                  event
-                                    .target
-                                    .value
-                                )
-                              }
-                              maxLength={
-                                2000
-                              }
-                              rows={4}
-                              className="w-full min-w-0 rounded-xl border border-[#dce7d8] p-4 text-base outline-none focus:border-[#83a78a] sm:text-sm"
-                            />
+const categoryNames: Record<Category, string> = {
+  free: "자유게시판",
+  tips: "정보 및 TIP 공유하기",
+  question: "질문",
+};
 
-                            <div className="mt-3 flex justify-end gap-3">
-                              <button
-                                type="button"
-                                disabled={
-                                  saving
-                                }
-                                onClick={() => {
-                                  setEditingCommentId(
-                                    null
-                                  );
-                                  setEditingCommentText(
-                                    ""
-                                  );
-                                }}
-                                className="min-h-11 rounded-full border px-5 py-2 text-xs"
-                              >
-                                취소
-                              </button>
+const postFields =
+  "id, author_id, category, title, content, image_paths, view_count, created_at, updated_at";
 
-                              <button
-                                type="button"
-                                disabled={
-                                  saving
-                                }
-                                onClick={() =>
-                                  saveCommentEdit(
-                                    comment
-                                  )
-                                }
-                                className="min-h-11 rounded-full bg-[#668b6c] px-5 py-2 text-xs font-bold text-white disabled:opacity-50"
-                              >
-                                수정 완료
-                              </button>
-                            </div>
+const commentFields =
+  "id, post_id, author_id, nickname, content, created_at, updated_at";
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getNickname(user: User) {
+  const metadata = user.user_metadata;
+
+  const value =
