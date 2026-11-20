@@ -1,0 +1,169 @@
+
+import Link from "next/link";
+import { ArrowLeft, ShieldCheck, Turtle } from "lucide-react";
+
+const sections = [
+  {
+    title: "1. 개인정보의 처리 목적",
+    paragraphs: [
+      "LIKE TURTLE(거북이처럼)은 개인이 운영하는 반려 거북이 커뮤니티로서 회원 인증, 서비스 제공, 성장일기 관리, 커뮤니티 운영 및 이용자 문의 처리를 위해 필요한 개인정보를 처리합니다.",
+      "수집한 개인정보는 안내된 목적 범위에서만 처리하며, 목적이 변경되는 경우 관련 법령에 따른 절차를 준수합니다.",
+    ],
+  },
+  {
+    title: "2. 처리하는 개인정보 항목",
+    paragraphs: [
+      "회원가입 및 로그인: 이메일 주소, 닉네임, 인증 관련 정보가 처리됩니다. 비밀번호 인증은 Supabase Auth를 통해 처리됩니다.",
+      "커뮤니티 이용: 작성자 식별정보, 게시글, 댓글, 좋아요 및 첨부 이미지 등 이용자가 등록한 정보가 처리됩니다.",
+      "성장일기 이용: 회원 식별정보, 거북이 정보, 성장 기록 및 이용자가 등록한 사진 등이 처리됩니다.",
+      "서비스 이용 과정에서 접속기록, IP 주소 등 기술적 정보가 서비스 제공업체의 시스템에서 처리될 수 있습니다. 실제 수집 항목과 보관 기간은 운영 환경 확인이 필요합니다.",
+    ],
+  },
+  {
+    title: "3. 개인정보의 처리 및 보유 기간",
+    paragraphs: [
+      "회원 인증 및 프로필 정보는 원칙적으로 회원 서비스 이용 기간 동안 처리합니다.",
+      "게시글, 댓글, 성장 기록 및 사진의 보유 기간과 회원 탈퇴 시 처리 방식은 실제 삭제 기능 및 데이터 보관 정책에 맞춰 최종 확정해야 합니다.",
+      "법령에 따라 보존이 필요한 정보는 해당 법령에서 정한 기간 동안 별도로 보존할 수 있으며, 보존 근거와 항목이 있는 경우 이를 구체적으로 고지합니다.",
+    ],
+  },
+  {
+    title: "4. 개인정보의 제3자 제공",
+    paragraphs: [
+      "운영자는 개인정보의 제3자 제공 여부 및 제공받는 자, 목적, 항목, 보유 기간을 확인하여 실제 운영 현황에 맞게 고지합니다.",
+      "법령에 따른 의무가 있거나 적법한 처리 근거가 있는 경우에는 관련 법령에 따라 처리합니다.",
+    ],
+  },
+  {
+    title: "5. 개인정보 처리업무의 위탁 및 국외 이전",
+    paragraphs: [
+      "LIKE TURTLE은 Supabase를 인증·데이터베이스·파일 저장 기능에, Vercel을 웹사이트 배포 및 호스팅에 사용합니다.",
+      "각 서비스 제공업체의 실제 개인정보 처리 역할, 위탁 범위, 저장·처리 국가, 국외 이전 여부 및 관련 법적 근거는 계약과 서비스 설정을 확인한 후 확정해야 합니다.",
+      "개인정보 처리위탁 또는 국외 이전에 관한 법정 고지사항이 적용되는 경우 수탁자, 이전 국가, 이전 목적과 항목 등 필요한 정보를 구체적으로 공개합니다.",
+    ],
+  },
+  {
+    title: "6. 개인정보의 파기",
+    paragraphs: [
+      "개인정보가 불필요하게 되었을 때에는 관련 법령에 따라 지체 없이 파기하는 것을 원칙으로 합니다.",
+      "전자적 개인정보는 복구 또는 재생되지 않도록 적절한 방법으로 삭제하며, 법령에 따라 보존할 필요가 있는 경우에는 보존 목적과 기간을 구분하여 관리합니다.",
+      "회원 탈퇴 요청에 따른 실제 계정 및 관련 데이터 삭제 절차는 서비스 운영 정책과 일치하도록 확정해야 합니다.",
+    ],
+  },
+  {
+    title: "7. 이용자 및 법정대리인의 권리",
+    paragraphs: [
+      "이용자는 관련 법령에서 정한 범위에서 자신의 개인정보에 대한 열람, 정정·삭제, 처리정지 및 동의 철회 등을 요청할 수 있습니다.",
+      "법정대리인은 법령에 따라 정보주체의 권리를 행사할 수 있습니다.",
+      "권리 행사 및 개인정보 관련 문의는 아래 개인정보 문의 연락처로 요청할 수 있으며, 운영자는 관련 법령에 따라 처리합니다.",
+    ],
+  },
+  {
+    title: "8. 개인정보의 안전성 확보 조치",
+    paragraphs: [
+      "운영자는 개인정보 보호를 위해 인증 및 접근 권한 관리, 데이터베이스 접근 통제, 저장소 권한 관리 등 필요한 안전성 확보 조치를 적용하고 점검합니다.",
+      "실제 적용한 기술적·관리적 조치는 Supabase와 Vercel 설정 및 서비스 운영 상태를 기준으로 관리합니다.",
+    ],
+  },
+  {
+    title: "9. 자동 수집 장치 및 접속정보",
+    paragraphs: [
+      "로그인 상태 유지 등 서비스 제공에 필요한 인증 토큰과 브라우저 저장 기능이 사용될 수 있습니다.",
+      "쿠키 및 접속정보의 실제 사용 여부와 거부 방법은 적용된 인증·호스팅·분석 서비스 설정에 따라 최종 고지해야 합니다.",
+      "이용자는 브라우저 설정에서 쿠키 및 사이트 데이터 등을 관리할 수 있으나, 일부 기능 이용이 제한될 수 있습니다.",
+    ],
+  },
+  {
+    title: "10. 개인정보 관련 문의",
+    paragraphs: [
+      "운영 형태: 개인 운영",
+      "개인정보 보호 담당자: [운영자 성명 기재]",
+      "문의 이메일: [실제 연락 가능한 이메일 기재]",
+      "개인정보 관련 문의 및 권리 행사 요청은 위 연락처로 접수합니다.",
+    ],
+  },
+  {
+    title: "11. 개인정보 처리방침의 변경",
+    paragraphs: [
+      "개인정보 처리방침을 변경하는 경우 이용자가 변경 내용을 확인할 수 있도록 웹사이트에 공개합니다.",
+      "시행일: [실제 공개·적용일 기재]",
+    ],
+  },
+];
+
+export default function PrivacyPage() {
+  return (
+    <main className="container-site min-w-0 pb-28 pt-7 text-[#405a46] md:pb-24 md:pt-12">
+      <div className="mx-auto max-w-4xl">
+        <Link
+          href="/"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#668b6c]"
+        >
+          <ArrowLeft size={17} />
+          홈으로 돌아가기
+        </Link>
+
+        <header className="mt-5 rounded-[24px] bg-[#eaf2e4] px-5 py-9 sm:rounded-[28px] sm:px-9 sm:py-12">
+          <div className="flex items-center gap-2 text-[#668b6c]">
+            <ShieldCheck size={23} />
+            <span className="text-xs font-bold tracking-widest">
+              PRIVACY POLICY
+            </span>
+          </div>
+
+          <h1 className="font-hand mt-5 text-3xl font-bold sm:text-4xl">
+            개인정보처리방침
+          </h1>
+
+          <p className="mt-4 break-keep text-sm leading-7 text-[#718573]">
+            거북이처럼은 회원의 소중한 개인정보를
+            안전하게 보호하기 위해 노력합니다.
+          </p>
+        </header>
+
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-7 text-amber-900">
+          이 페이지는 운영 정보 확인 전 초안입니다.
+          운영자 연락처, 데이터 보유·삭제 기준,
+          개인정보 처리위탁 및 국외 이전 사항을
+          확인한 뒤 정식 방침으로 확정해야 합니다.
+        </div>
+
+        <div className="mt-6 rounded-[24px] border border-[#e3e9df] bg-white px-5 py-3 shadow-sm sm:px-9 sm:py-5">
+          {sections.map((section) => (
+            <section
+              key={section.title}
+              className="border-b border-[#edf0e9] py-6 last:border-b-0"
+            >
+              <h2 className="break-keep text-lg font-bold sm:text-xl">
+                {section.title}
+              </h2>
+
+              <div className="mt-4 space-y-3">
+                {section.paragraphs.map((paragraph) => (
+                  <p
+                    key={paragraph}
+                    className="whitespace-pre-wrap break-keep text-[13px] leading-7 text-[#718573] sm:text-sm"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-xs text-[#829482]">
+          <Turtle size={18} />
+          <span>LIKE TURTLE · 거북이처럼</span>
+          <span>·</span>
+          <Link
+            href="/terms"
+            className="font-semibold text-[#668b6c] hover:underline"
+          >
+            이용약관 보기
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
