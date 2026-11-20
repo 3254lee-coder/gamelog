@@ -151,36 +151,41 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container-site min-h-[75vh] pb-24 pt-14 text-[#405a46]">
-      <div className="mx-auto max-w-md">
-        <div className="relative mb-9 text-center">
-          <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-[26px] bg-[#e8f1e2] text-[#668b6c]">
-            <Turtle size={45} strokeWidth={1.5} />
+    <main className="container-site min-h-[75vh] min-w-0 pb-28 pt-8 text-[#405a46] sm:pt-14 md:pb-24">
+      <div className="mx-auto w-full max-w-md">
+        {/* 페이지 소개 */}
+        <div className="relative mb-7 text-center sm:mb-9">
+          <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#e8f1e2] text-[#668b6c] sm:h-20 sm:w-20 sm:rounded-[26px]">
+            <Turtle
+              size={36}
+              strokeWidth={1.5}
+              className="sm:h-[45px] sm:w-[45px]"
+            />
 
             <Sparkles
-              size={22}
-              className="absolute -right-5 -top-2 text-[#b7a16e]"
+              size={19}
+              className="absolute -right-4 -top-2 text-[#b7a16e] sm:-right-5 sm:h-[22px] sm:w-[22px]"
             />
 
             <Heart
-              size={20}
-              className="absolute -bottom-2 -left-5 text-[#d9a1a9]"
+              size={18}
+              className="absolute -bottom-2 -left-4 text-[#d9a1a9] sm:-left-5 sm:h-5 sm:w-5"
             />
           </div>
 
-          <p className="mt-7 text-xs font-bold tracking-[0.2em] text-[#739578]">
+          <p className="mt-6 break-words text-[10px] font-bold tracking-[0.12em] text-[#739578] sm:mt-7 sm:text-xs sm:tracking-[0.2em]">
             {isLogin
               ? "WELCOME BACK TO LIKE TURTLE"
               : "JOIN LIKE TURTLE"}
           </p>
 
-          <h1 className="font-hand mt-3 text-3xl md:text-4xl">
+          <h1 className="font-hand mt-3 break-keep text-[29px] leading-snug sm:text-3xl md:text-4xl">
             {isLogin
               ? "다시 만나서 반가워요!"
               : "거북이처럼, 함께해요!"}
           </h1>
 
-          <p className="mt-4 text-sm leading-7 text-[#829482]">
+          <p className="mt-3 break-keep text-[13px] leading-7 text-[#829482] sm:mt-4 sm:text-sm">
             {isLogin ? (
               <>
                 우리 거북이의 소중한 이야기를
@@ -197,9 +202,10 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* 로그인 및 회원가입 */}
         <form
           onSubmit={submit}
-          className="rounded-[28px] border border-[#e3e9df] bg-white p-7 shadow-sm md:p-9"
+          className="rounded-[22px] border border-[#e3e9df] bg-white p-5 shadow-sm sm:rounded-[28px] sm:p-7 md:p-9"
         >
           <div className="space-y-5">
             {!isLogin && (
@@ -223,7 +229,8 @@ export default function LoginPage() {
                     setNickname(event.target.value)
                   }
                   placeholder="2~20자 닉네임"
-                  className="w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-sm outline-none focus:border-[#668b6c]"
+                  disabled={busy}
+                  className="min-h-12 w-full min-w-0 rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-base outline-none focus:border-[#668b6c] disabled:opacity-60 sm:text-sm"
                 />
               </label>
             )}
@@ -241,12 +248,16 @@ export default function LoginPage() {
                 required
                 type="email"
                 autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
                 value={email}
                 onChange={(event) =>
                   setEmail(event.target.value)
                 }
                 placeholder="이메일 주소를 입력하세요"
-                className="w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-sm outline-none focus:border-[#668b6c]"
+                disabled={busy}
+                className="min-h-12 w-full min-w-0 rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-base outline-none focus:border-[#668b6c] disabled:opacity-60 sm:text-sm"
               />
             </label>
 
@@ -277,7 +288,8 @@ export default function LoginPage() {
                     ? "비밀번호를 입력하세요"
                     : "6자 이상 입력하세요"
                 }
-                className="w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-sm outline-none focus:border-[#668b6c]"
+                disabled={busy}
+                className="min-h-12 w-full min-w-0 rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-base outline-none focus:border-[#668b6c] disabled:opacity-60 sm:text-sm"
               />
             </label>
           </div>
@@ -288,7 +300,7 @@ export default function LoginPage() {
                 type="button"
                 disabled={busy}
                 onClick={resetPassword}
-                className="text-xs font-semibold text-[#739578] hover:underline disabled:opacity-50"
+                className="inline-flex min-h-10 items-center text-xs font-semibold text-[#739578] hover:underline disabled:opacity-50"
               >
                 비밀번호를 잊으셨나요?
               </button>
@@ -298,7 +310,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-[#668b6c] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#527558] disabled:opacity-50"
+            className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#668b6c] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#527558] disabled:opacity-50 sm:mt-7"
           >
             {busy
               ? "처리 중..."
@@ -313,14 +325,14 @@ export default function LoginPage() {
             <p
               role="status"
               aria-live="polite"
-              className="mt-5 rounded-xl bg-[#edf5e8] p-4 text-sm leading-6 text-[#608566]"
+              className="mt-5 break-words rounded-xl bg-[#edf5e8] p-4 text-sm leading-6 text-[#608566]"
             >
               {message}
             </p>
           )}
 
-          <div className="mt-7 border-t border-[#edf0e9] pt-6 text-center">
-            <p className="text-sm text-[#829482]">
+          <div className="mt-6 border-t border-[#edf0e9] pt-5 text-center sm:mt-7 sm:pt-6">
+            <p className="break-keep text-[13px] text-[#829482] sm:text-sm">
               {isLogin
                 ? "아직 거북이처럼 계정이 없나요?"
                 : "이미 거북이처럼 계정이 있나요?"}
@@ -328,8 +340,9 @@ export default function LoginPage() {
 
             <button
               type="button"
+              disabled={busy}
               onClick={switchMode}
-              className="mt-2 text-sm font-bold text-[#668b6c] hover:underline"
+              className="mt-1 inline-flex min-h-11 items-center justify-center px-3 text-sm font-bold text-[#668b6c] hover:underline disabled:opacity-50"
             >
               {isLogin
                 ? "회원가입하기"
@@ -338,10 +351,11 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="mt-8 text-center">
+        {/* 비회원 커뮤니티 열람 */}
+        <div className="mt-6 text-center sm:mt-8">
           <Link
             href="/community"
-            className="inline-flex items-center gap-2 text-sm text-[#829482] hover:text-[#668b6c]"
+            className="inline-flex min-h-11 items-center justify-center gap-2 px-2 text-[13px] text-[#829482] hover:text-[#668b6c] sm:text-sm"
           >
             로그인 없이 커뮤니티 둘러보기
             <ArrowRight size={16} />
