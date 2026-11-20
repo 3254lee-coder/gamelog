@@ -151,10 +151,12 @@ export default function ResetPasswordPage() {
     };
   }, []);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
-    if (!allowed) return;
+    if (!allowed || busy) return;
 
     if (password.length < 6) {
       setMessage("비밀번호는 6자 이상 입력해 주세요.");
@@ -206,41 +208,50 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="container-site min-h-[75vh] pb-24 pt-16 text-[#405a46]">
-      <div className="mx-auto max-w-md">
-        <div className="mb-9 text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[26px] bg-[#e8f1e2] text-[#668b6c]">
-            <Turtle size={44} strokeWidth={1.5} />
+    <main className="container-site min-h-[75vh] min-w-0 pb-28 pt-8 text-[#405a46] sm:pt-16 md:pb-24">
+      <div className="mx-auto w-full max-w-md">
+        {/* 페이지 제목 */}
+        <div className="mb-7 text-center sm:mb-9">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#e8f1e2] text-[#668b6c] sm:h-20 sm:w-20 sm:rounded-[26px]">
+            <Turtle
+              size={36}
+              strokeWidth={1.5}
+              className="sm:h-11 sm:w-11"
+            />
           </div>
 
-          <p className="mt-6 text-xs font-bold tracking-[0.2em] text-[#739578]">
+          <p className="mt-5 text-[11px] font-bold tracking-[0.16em] text-[#739578] sm:mt-6 sm:text-xs sm:tracking-[0.2em]">
             LIKE TURTLE
           </p>
 
-          <h1 className="mt-3 text-3xl font-bold">
+          <h1 className="mt-3 break-keep text-[27px] font-bold leading-tight sm:text-3xl">
             비밀번호 재설정
           </h1>
 
-          <p className="mt-4 text-sm leading-7 text-[#829482]">
+          <p className="mt-3 break-keep text-[13px] leading-7 text-[#829482] sm:mt-4 sm:text-sm">
             새로운 비밀번호를 설정해 주세요.
           </p>
         </div>
 
-        <div className="rounded-[28px] border border-[#e3e9df] bg-white p-7 shadow-sm md:p-9">
+        {/* 비밀번호 재설정 카드 */}
+        <div className="rounded-[22px] border border-[#e3e9df] bg-white p-5 shadow-sm sm:rounded-[28px] sm:p-7 md:p-9">
           {!ready ? (
-            <p className="text-center text-sm text-[#829482]">
+            <p
+              role="status"
+              className="py-7 text-center text-sm text-[#829482]"
+            >
               인증 링크 확인 중...
             </p>
           ) : success ? (
-            <div className="text-center">
-              <p className="text-sm text-[#608566]">
+            <div className="py-3 text-center">
+              <p className="break-keep text-sm leading-7 text-[#608566]">
                 비밀번호 변경이 완료되었습니다.
               </p>
 
               <button
                 type="button"
                 onClick={goToLogin}
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#668b6c] px-6 py-3 text-sm font-bold text-white"
+                className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#668b6c] px-6 py-3 text-sm font-bold text-white sm:w-auto"
               >
                 로그인 화면으로
                 <ArrowRight size={17} />
@@ -250,7 +261,10 @@ export default function ResetPasswordPage() {
             <form onSubmit={submit} className="space-y-5">
               <label className="block">
                 <span className="mb-2 flex items-center gap-2 text-sm font-bold">
-                  <LockKeyhole size={17} />
+                  <LockKeyhole
+                    size={17}
+                    className="text-[#668b6c]"
+                  />
                   새 비밀번호
                 </span>
 
@@ -260,16 +274,21 @@ export default function ResetPasswordPage() {
                   type="password"
                   autoComplete="new-password"
                   value={password}
+                  disabled={busy}
                   onChange={(event) =>
                     setPassword(event.target.value)
                   }
                   placeholder="6자 이상 입력"
-                  className="w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-sm outline-none focus:border-[#668b6c]"
+                  className="min-h-12 w-full min-w-0 rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-base outline-none focus:border-[#668b6c] disabled:opacity-60 sm:text-sm"
                 />
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-bold">
+                <span className="mb-2 flex items-center gap-2 text-sm font-bold">
+                  <LockKeyhole
+                    size={17}
+                    className="text-[#668b6c]"
+                  />
                   새 비밀번호 확인
                 </span>
 
@@ -279,18 +298,19 @@ export default function ResetPasswordPage() {
                   type="password"
                   autoComplete="new-password"
                   value={confirm}
+                  disabled={busy}
                   onChange={(event) =>
                     setConfirm(event.target.value)
                   }
                   placeholder="비밀번호 다시 입력"
-                  className="w-full rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-sm outline-none focus:border-[#668b6c]"
+                  className="min-h-12 w-full min-w-0 rounded-xl border border-[#dce7d8] bg-[#f8faf6] px-4 py-3.5 text-base outline-none focus:border-[#668b6c] disabled:opacity-60 sm:text-sm"
                 />
               </label>
 
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full rounded-xl bg-[#668b6c] px-5 py-4 text-sm font-bold text-white hover:bg-[#527558] disabled:opacity-50"
+                className="min-h-12 w-full rounded-xl bg-[#668b6c] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#527558] disabled:opacity-50"
               >
                 {busy
                   ? "변경 중..."
@@ -298,14 +318,14 @@ export default function ResetPasswordPage() {
               </button>
             </form>
           ) : (
-            <div className="text-center">
-              <p className="text-sm text-[#829482]">
+            <div className="py-3 text-center">
+              <p className="break-keep text-[13px] leading-7 text-[#829482] sm:text-sm">
                 로그인 화면에서 재설정 메일을 다시 요청해 주세요.
               </p>
 
               <Link
                 href="/login"
-                className="mt-5 inline-block text-sm font-bold text-[#668b6c] underline"
+                className="mt-5 inline-flex min-h-11 items-center justify-center px-4 text-sm font-bold text-[#668b6c] underline underline-offset-4"
               >
                 로그인 화면으로
               </Link>
@@ -315,7 +335,8 @@ export default function ResetPasswordPage() {
           {message && (
             <p
               role="status"
-              className="mt-5 rounded-xl bg-[#edf5e8] p-4 text-sm leading-6 text-[#608566]"
+              aria-live="polite"
+              className="mt-5 break-words rounded-xl bg-[#edf5e8] p-4 text-[13px] leading-6 text-[#608566] sm:text-sm"
             >
               {message}
             </p>
