@@ -1,96 +1,107 @@
-"use client";
+                          </div>
+                        ) : (
+                          <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-[#627663]">
+                            {
+                              comment.content
+                            }
+                          </p>
+                        )}
+                      </div>
+                    );
+                  }
+                )
+              )}
+            </div>
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type FormEvent,
-} from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
-import type { User } from "@supabase/supabase-js";
-import { getSupabase } from "@/lib/supabase";
-import {
-  ArrowLeft,
-  CalendarDays,
-  Eye,
-  Heart,
-  ImageIcon,
-  ImagePlus,
-  LockKeyhole,
-  MessageCircle,
-  Pencil,
-  Send,
-  Trash2,
-  Turtle,
-} from "lucide-react";
+            <div className="mt-8 border-t border-[#edf0e9] pt-8">
+              {user ? (
+                <form
+                  onSubmit={
+                    submitComment
+                  }
+                >
+                  <p className="mb-3 text-sm font-bold">
+                    댓글 작성
+                  </p>
 
-type Category = "free" | "tips" | "question";
+                  <textarea
+                    value={
+                      commentText
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setCommentText(
+                        event.target.value
+                      )
+                    }
+                    maxLength={2000}
+                    rows={4}
+                    placeholder="따뜻한 댓글을 남겨주세요."
+                    className="w-full min-w-0 rounded-xl border border-[#dce7d8] p-4 text-base leading-7 outline-none focus:border-[#83a78a] sm:text-sm"
+                    required
+                  />
 
-type Post = {
-  id: string;
-  author_id: string;
-  category: Category;
-  title: string;
-  content: string;
-  image_paths: string[];
-  view_count: number;
-  created_at: string;
-  updated_at: string;
-};
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-xs text-[#9baa99]">
+                      {
+                        commentText.length
+                      }{" "}
+                      / 2,000
+                    </span>
 
-type Comment = {
-  id: string;
-  post_id: string;
-  author_id: string | null;
-  nickname: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-};
+                    <button
+                      type="submit"
+                      disabled={
+                        saving
+                      }
+                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#668b6c] px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
+                    >
+                      <Send
+                        size={16}
+                      />
+                      {saving
+                        ? "처리 중..."
+                        : "댓글 등록"}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="rounded-2xl bg-[#f1f6ed] px-4 py-8 text-center sm:px-6">
+                  <LockKeyhole
+                    size={28}
+                    className="mx-auto text-[#719273]"
+                  />
 
-type NewImage = {
-  id: string;
-  file: File;
-  preview: string;
-};
+                  <p className="mt-4 text-sm text-[#718573]">
+                    댓글을 작성하려면
+                    로그인이 필요합니다.
+                  </p>
 
-const BUCKET = "tortoise-post-images";
-const MAX_IMAGES = 5;
-const MAX_SIZE = 5 * 1024 * 1024;
-const VIEW_INTERVAL = 30 * 60 * 1000;
+                  <Link
+                    href="/login"
+                    className="mt-5 inline-flex rounded-full bg-[#668b6c] px-6 py-3 text-sm font-bold text-white"
+                  >
+                    로그인하러 가기
+                  </Link>
+                </div>
+              )}
+            </div>
+          </section>
 
-const EXTENSIONS: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
-
-const categoryNames: Record<Category, string> = {
-  free: "자유게시판",
-  tips: "정보 및 TIP 공유하기",
-  question: "질문",
-};
-
-const postFields =
-  "id, author_id, category, title, content, image_paths, view_count, created_at, updated_at";
-
-const commentFields =
-  "id, post_id, author_id, nickname, content, created_at, updated_at";
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+          <div className="mt-7 flex justify-center sm:mt-8">
+            <Link
+              href="/community"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white"
+            >
+              <ArrowLeft
+                size={17}
+              />
+              게시글 목록
+            </Link>
+          </div>
+        </>
+      )}
+    </main>
+  );
 }
-
-function getNickname(user: User) {
-  const metadata = user.user_metadata;
-
-  const value =
