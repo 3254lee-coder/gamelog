@@ -13,6 +13,14 @@ const siteName = "거북이처럼 | LIKE TURTLE";
 const siteDescription =
   "조금 느리면 어때. 육지거북과 수생거북 사육 가이드, 커뮤니티, 성장일기를 함께하는 따뜻한 반려 거북이 공간.";
 
+const withdrawalEmail =
+  "mailto:3254lee@naver.com?subject=" +
+  encodeURIComponent("LIKE TURTLE 회원 탈퇴 문의") +
+  "&body=" +
+  encodeURIComponent(
+    "안녕하세요.\nLIKE TURTLE 회원 탈퇴를 문의합니다.\n\n가입 이메일: \n문의 내용: \n\n※ 비밀번호는 입력하지 마세요."
+  );
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
@@ -94,9 +102,7 @@ export default function RootLayout({
                 © 2026 LIKE TURTLE · 거북이처럼
               </span>
 
-              <span>
-                조금 느리면 어때
-              </span>
+              <span>조금 느리면 어때</span>
             </div>
 
             <nav
@@ -123,6 +129,20 @@ export default function RootLayout({
               >
                 이용약관
               </Link>
+
+              <span
+                aria-hidden="true"
+                className="text-[#cbd8c7]"
+              >
+                |
+              </span>
+
+              <a
+                href={withdrawalEmail}
+                className="inline-flex min-h-10 items-center font-semibold text-[#668b6c] transition hover:text-[#405a46] hover:underline"
+              >
+                회원 탈퇴 문의
+              </a>
             </nav>
           </div>
         </footer>
