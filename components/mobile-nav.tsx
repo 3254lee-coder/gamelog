@@ -4,11 +4,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BookOpen,
   House,
-  LibraryBig,
   MessageCircle,
   NotebookPen,
+  Turtle,
+  Waves,
 } from "lucide-react";
 
 const items = [
@@ -18,14 +18,9 @@ const items = [
     icon: House,
   },
   {
-    href: "/guide",
-    label: "가이드",
-    icon: BookOpen,
-  },
-  {
-    href: "/species",
-    label: "도감",
-    icon: LibraryBig,
+    href: "/growth",
+    label: "성장일기",
+    icon: NotebookPen,
   },
   {
     href: "/community",
@@ -33,9 +28,14 @@ const items = [
     icon: MessageCircle,
   },
   {
-    href: "/growth",
-    label: "성장일기",
-    icon: NotebookPen,
+    href: "/guide",
+    label: "육지거북",
+    icon: Turtle,
+  },
+  {
+    href: "/species",
+    label: "수생거북",
+    icon: Waves,
   },
 ];
 
@@ -50,7 +50,7 @@ export default function MobileNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="mx-auto grid max-w-lg grid-cols-5 gap-1 px-2 pt-2 pb-2">
+      <div className="mx-auto grid max-w-lg grid-cols-5 gap-1 px-2 pb-2 pt-2">
         {items.map((item) => {
           const Icon = item.icon;
 
