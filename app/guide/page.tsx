@@ -1,284 +1,251 @@
 
+import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowLeft,
   ArrowRight,
   BookOpen,
-  House,
-  Sun,
-  Thermometer,
-  Salad,
-  HeartPulse,
-  ClipboardCheck,
-  AlertCircle,
+  Camera,
+  Heart,
+  MessageCircle,
+  NotebookPen,
+  Sparkles,
   Turtle,
+  Waves,
 } from "lucide-react";
 
-const guides = [
+const categories = [
   {
-    id: "preparation",
-    title: "01. 입양 전 준비",
-    subtitle: "거북이를 데려오기 전에",
-    icon: House,
-    color: "#eaf2e6",
-    items: [
-      "키우려는 육지거북의 정확한 종과 성체 크기를 확인하세요.",
-      "성장 후에도 사용할 수 있는 충분한 사육 공간을 계획하세요.",
-      "온도 조절 장치, UVB 조명, 은신처, 물그릇을 준비하세요.",
-      "파충류 진료가 가능한 동물병원을 미리 알아두세요.",
-      "합법적인 분양 여부와 필요한 서류를 확인하세요.",
-    ],
+    title: "성장일기",
+    description: "우리 거북이의 소중한 성장 기록",
+    details: "거북이 등록 · 체중 · 등갑 길이 · 성장 그래프",
+    icon: NotebookPen,
+    background: "#f8ebed",
+    color: "#b27d8b",
+    href: "/growth",
   },
   {
-    id: "environment",
-    title: "02. 사육 환경",
-    subtitle: "안전하고 편안한 보금자리",
-    icon: Thermometer,
-    color: "#f8f0e2",
-    items: [
-      "사육장 안에 따뜻한 구역과 서늘한 구역을 구분하세요.",
-      "온도계와 습도계를 이용해 실제 환경을 측정하세요.",
-      "종과 성장 단계에 맞는 바닥재와 습도를 유지하세요.",
-      "화상이나 탈출 위험이 없는지 정기적으로 점검하세요.",
-      "거북이가 몸을 숨길 수 있는 은신처를 마련하세요.",
-    ],
+    title: "커뮤니티",
+    description: "질문하고 일상을 나누는 공간",
+    details: "자유게시판 · 정보 공유 · 사진",
+    icon: MessageCircle,
+    background: "#eaf1f8",
+    color: "#6c8ca9",
+    href: "/community",
   },
   {
-    id: "lighting",
-    title: "03. 조명과 UVB",
-    subtitle: "건강한 성장에 필요한 빛",
-    icon: Sun,
-    color: "#fcf4dc",
-    items: [
-      "사육 종에 적합한 UVB 조명과 열원을 선택하세요.",
-      "제조사 지침에 맞게 조명 거리와 설치 위치를 조정하세요.",
-      "유리나 플라스틱이 UVB를 차단할 수 있다는 점에 유의하세요.",
-      "조명 사용 시간과 교체 주기를 관리하세요.",
-      "열원이 거북이에게 직접 닿지 않도록 보호하세요.",
-    ],
+    title: "사육 가이드 - 육지거북",
+    description: "육지거북을 위한 사육 기초 정보",
+    details: "사육장 · 온습도 · UVB · 먹이",
+    icon: Turtle,
+    background: "#edf5e8",
+    color: "#608566",
+    href: "/guide",
   },
   {
-    id: "feeding",
-    title: "04. 먹이와 영양",
-    subtitle: "올바른 식단 만들기",
-    icon: Salad,
-    color: "#edf4e6",
-    items: [
-      "육지거북은 종에 따라 적합한 식단이 다릅니다.",
-      "키우는 종에 맞는 잎채소와 야생초 등을 확인하세요.",
-      "칼슘 공급과 UVB 환경을 함께 관리하세요.",
-      "과일이나 고단백 먹이를 임의로 주식으로 사용하지 마세요.",
-      "항상 깨끗한 물을 이용할 수 있도록 하세요.",
-    ],
-  },
-  {
-    id: "health",
-    title: "05. 건강관리",
-    subtitle: "매일 작은 변화를 살펴봐요",
-    icon: HeartPulse,
-    color: "#f9ece9",
-    items: [
-      "체중과 등갑 길이를 일정한 방법으로 기록하세요.",
-      "먹이 섭취량과 활동량의 변화를 관찰하세요.",
-      "눈, 코, 입, 등갑과 피부 상태를 확인하세요.",
-      "호흡 이상, 지속적인 식욕 저하, 심한 무기력 등이 나타나면 파충류 진료가 가능한 수의사에게 상담하세요.",
-      "새로 입양한 개체는 기존 개체와 분리해 건강 상태를 확인하세요.",
-    ],
+    title: "사육 가이드 - 수생거북",
+    description: "수생거북을 위한 사육 기초 정보",
+    details: "수조 · 여과 · 수질 · 일광욕",
+    icon: Waves,
+    background: "#f8f0df",
+    color: "#a18558",
+    href: "/species",
   },
 ];
 
-export default function GuidePage() {
+export default function HomePage() {
   return (
-    <main className="container-site min-h-screen min-w-0 pb-28 pt-5 text-[#405a46] sm:pt-9 md:pb-24">
-      <Link
-        href="/"
-        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#62866a]"
-      >
-        <ArrowLeft size={17} />
-        홈으로 돌아가기
-      </Link>
+    <main className="container-site min-h-screen min-w-0 pb-28 pt-4 text-[#405a46] sm:pt-8 md:pb-24">
+      {/* 기존 메인 배너 유지 */}
+      <section className="overflow-hidden rounded-[20px] bg-[#edf4e7] shadow-sm sm:rounded-[28px]">
+        <Image
+          src="/tortoise-hero.png"
+          alt="거북이처럼 - 조금 느리면 어때"
+          width={1645}
+          height={386}
+          priority
+          sizes="(max-width: 768px) 100vw, 1200px"
+          className="h-auto w-full"
+        />
+      </section>
 
-      {/* 가이드 소개 */}
-      <section className="mt-4 rounded-[22px] bg-[#edf4e7] px-5 py-8 sm:mt-7 sm:rounded-[28px] sm:px-7 sm:py-12 md:px-12 md:py-16">
-        <div className="flex items-center gap-2 text-[#62866a]">
-          <Turtle size={21} className="shrink-0 sm:h-[23px] sm:w-[23px]" />
-          <span className="text-[10px] font-bold tracking-[0.14em] sm:text-xs sm:tracking-[0.18em]">
-            TORTOISE CARE GUIDE
+      {/* 환영 문구 */}
+      <section className="px-1 pb-3 pt-9 text-center sm:px-2 sm:pb-5 sm:pt-12">
+        <div className="mb-4 flex items-center justify-center gap-2 text-[#86a58a]">
+          <Sparkles size={17} />
+          <span className="text-[10px] font-bold tracking-[0.12em] sm:text-xs sm:tracking-[0.18em]">
+            WELCOME TO OUR LITTLE WORLD
+          </span>
+          <Sparkles size={17} />
+        </div>
+
+        <h1 className="font-hand text-[30px] leading-[1.4] sm:text-4xl md:text-5xl">
+          거북이와 함께하는
+          <br className="sm:hidden" /> 느리고 따뜻한 일상
+        </h1>
+
+        <p className="mx-auto mt-4 max-w-2xl break-keep text-[13px] leading-7 text-[#788b79] sm:mt-5 sm:text-sm sm:leading-8 md:text-base">
+          처음 거북이를 키우는 분도,
+          <br className="sm:hidden" />
+          오랫동안 함께해 온 분도 환영해요.
+          <br className="hidden sm:block" />
+          서로 배우고, 질문하고, 작은 성장을
+          <br className="sm:hidden" />
+          함께 기록하는 공간입니다.
+        </p>
+      </section>
+
+      {/* 주요 메뉴 */}
+      <section className="mt-8 sm:mt-9">
+        <div className="mb-4 flex items-end justify-between gap-3 sm:mb-6">
+          <div>
+            <p className="mb-1 text-[11px] font-bold tracking-[0.16em] text-[#8ca18a] sm:mb-2 sm:text-xs">
+              EXPLORE
+            </p>
+            <h2 className="font-hand text-[28px] sm:text-3xl md:text-4xl">
+              무엇을 해볼까요?
+            </h2>
+          </div>
+          <span className="shrink-0 text-[11px] text-[#9ba99a] sm:text-xs">
+            천천히 둘러보세요
           </span>
         </div>
 
-        <h1 className="font-hand mt-4 break-keep text-[30px] leading-[1.4] sm:mt-5 sm:text-4xl sm:leading-tight md:text-6xl">
-          처음 키우는 육지거북,
-          <br />
-          무엇부터 준비할까요?
-        </h1>
-
-        <p className="mt-4 max-w-2xl break-keep text-[13px] leading-7 text-[#687c6b] sm:mt-6 sm:text-sm sm:leading-8 md:text-base">
-          육지거북과 함께하는 첫걸음.
-          <br className="sm:hidden" />
-          입양 준비부터 사육 환경, 먹이와 건강관리까지
-          꼭 알아야 할 기본 내용을 정리했습니다.
-        </p>
-
-        <div className="mt-5 inline-flex max-w-full items-center gap-2 rounded-full bg-white/80 px-3 py-2 text-[11px] font-semibold text-[#62866a] sm:mt-7 sm:px-4 sm:text-xs">
-          <BookOpen size={15} className="shrink-0 sm:h-4 sm:w-4" />
-          초보 사육자를 위한 기초 안내
-        </div>
-      </section>
-
-      {/* 가이드 목차 */}
-      <section id="guide-top" className="mt-9 sm:mt-12">
-        <div className="mb-4 flex items-center gap-2 sm:mb-6">
-          <ClipboardCheck
-            size={21}
-            className="shrink-0 text-[#62866a] sm:h-[23px] sm:w-[23px]"
-          />
-          <h2 className="font-hand text-[28px] sm:text-3xl md:text-4xl">
-            사육 가이드 목차
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
-          {guides.map((guide) => {
-            const Icon = guide.icon;
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          {categories.map((category) => {
+            const Icon = category.icon;
 
             return (
-              <a
-                key={guide.id}
-                href={`#${guide.id}`}
-                className="flex min-h-[82px] min-w-0 flex-col items-start justify-center gap-2 rounded-2xl border border-[#e5e9e0] bg-white p-3 transition hover:border-[#9eb89f] hover:bg-[#f7faf5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#62866a] sm:min-h-[68px] sm:flex-row sm:items-center sm:gap-3 sm:p-4"
+              <Link
+                key={category.href}
+                href={category.href}
+                className="group flex min-h-[200px] min-w-0 flex-col rounded-[20px] border border-white/80 p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:min-h-[230px] sm:rounded-[24px] sm:p-6"
+                style={{
+                  backgroundColor: category.background,
+                }}
               >
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11"
-                  style={{ backgroundColor: guide.color }}
-                >
-                  <Icon
-                    size={20}
-                    className="text-[#62866a] sm:h-[22px] sm:w-[22px]"
+                <div className="flex items-start justify-between gap-2">
+                  <div
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/75 sm:h-14 sm:w-14 sm:rounded-2xl"
+                    style={{ color: category.color }}
+                  >
+                    <Icon
+                      size={25}
+                      strokeWidth={1.7}
+                      className="sm:h-[30px] sm:w-[30px]"
+                    />
+                  </div>
+
+                  <ArrowRight
+                    size={19}
+                    className="shrink-0 transition group-hover:translate-x-1"
+                    style={{ color: category.color }}
                   />
-                </span>
+                </div>
 
-                <span className="min-w-0 flex-1 break-keep text-[12px] font-bold leading-5 sm:text-sm">
-                  {guide.title}
-                </span>
-
-                <ArrowRight
-                  size={17}
-                  className="hidden shrink-0 text-[#9aad9a] sm:block"
-                />
-              </a>
+                <div className="mt-auto pt-5 sm:mt-8 sm:pt-0">
+                  <h3 className="font-hand break-keep text-[21px] leading-snug sm:text-3xl">
+                    {category.title}
+                  </h3>
+                  <p className="mt-2 break-keep text-[12px] leading-5 text-[#687c6b] sm:text-sm sm:leading-7">
+                    {category.description}
+                  </p>
+                  <p className="mt-4 hidden text-xs text-[#8c9b8a] sm:block">
+                    {category.details}
+                  </p>
+                </div>
+              </Link>
             );
           })}
         </div>
-
-        <p className="mt-3 text-center text-[11px] text-[#91a391] sm:hidden">
-          궁금한 항목을 누르면 해당 설명으로 이동합니다.
-        </p>
       </section>
 
-      {/* 각 가이드 상세 내용 */}
-      <section className="mt-9 space-y-4 sm:mt-12 sm:space-y-6">
-        {guides.map((guide) => {
-          const Icon = guide.icon;
+      {/* 사이트 소개 */}
+      <section className="mt-11 rounded-[22px] border border-[#e5ecdf] bg-[#f8faf5] px-5 py-7 sm:mt-16 sm:rounded-[28px] sm:px-7 sm:py-11 md:px-12">
+        <div className="flex flex-col items-start gap-4 sm:gap-6 md:flex-row md:items-center">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#e5efdf] text-[#739578] sm:h-20 sm:w-20 sm:rounded-[24px]">
+            <Turtle size={35} strokeWidth={1.5} />
+          </div>
 
-          return (
-            <article
-              key={guide.id}
-              id={guide.id}
-              className="scroll-mt-24 overflow-hidden rounded-[20px] border border-[#e5e9e0] bg-white shadow-sm sm:scroll-mt-28 sm:rounded-[24px]"
-            >
-              <div
-                className="flex items-center gap-3 px-4 py-5 sm:gap-4 sm:px-6 sm:py-6 md:px-8"
-                style={{ backgroundColor: guide.color }}
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/75 text-[#62866a] sm:h-12 sm:w-12 sm:rounded-2xl">
-                  <Icon size={24} className="sm:h-[27px] sm:w-[27px]" />
-                </span>
-
-                <div className="min-w-0">
-                  <h2 className="font-hand break-keep text-[25px] leading-tight sm:text-3xl">
-                    {guide.title}
-                  </h2>
-                  <p className="mt-1 text-[12px] text-[#687c6b] sm:text-sm">
-                    {guide.subtitle}
-                  </p>
-                </div>
-              </div>
-
-              <ul className="space-y-4 px-4 py-6 sm:px-6 sm:py-7 md:px-8">
-                {guide.items.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-3 text-[13px] leading-7 text-[#617263] sm:text-sm"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="mt-[10px] h-2 w-2 shrink-0 rounded-full bg-[#8eae8f]"
-                    />
-                    <span className="min-w-0 break-keep">
-                      {item}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="border-t border-[#f0f3ed] px-4 py-2 text-right sm:hidden">
-                <a
-                  href="#guide-top"
-                  className="inline-flex min-h-10 items-center text-[12px] font-semibold text-[#62866a]"
-                >
-                  목차로 돌아가기
-                </a>
-              </div>
-            </article>
-          );
-        })}
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold tracking-[0.16em] text-[#91a590] sm:text-xs">
+              OUR STORY
+            </p>
+            <h2 className="font-hand mt-2 text-[28px] sm:text-3xl md:text-4xl">
+              조금 느리면 어때
+            </h2>
+            <p className="mt-3 break-keep text-[13px] leading-7 text-[#738674] sm:mt-4 sm:text-sm sm:leading-8">
+              거북이의 속도에 맞춰 천천히 배우고,
+              소중한 순간을 함께 나누는 곳.
+              <br className="hidden sm:block" />
+              「거북이처럼」은 모든 거북이와 사육자를 위한
+              따뜻한 커뮤니티를 꿈꿉니다.
+            </p>
+          </div>
+        </div>
       </section>
 
-      {/* 주의사항 */}
-      <section className="mt-9 rounded-[20px] border border-[#e6e2d4] bg-[#faf5e8] p-5 sm:mt-10 sm:rounded-[24px] sm:p-6 md:p-8">
-        <div className="flex items-center gap-2 text-[#9c7843]">
-          <AlertCircle size={21} className="shrink-0 sm:h-[22px] sm:w-[22px]" />
-          <h2 className="text-base font-bold sm:text-lg">
-            꼭 기억해 주세요
-          </h2>
+      {/* 커뮤니티 바로가기 */}
+      <section className="mt-11 sm:mt-16">
+        <div className="mb-4 flex items-end justify-between gap-3 sm:mb-6">
+          <div>
+            <p className="mb-1 text-[11px] font-bold tracking-[0.16em] text-[#8ca18a] sm:mb-2 sm:text-xs">
+              COMMUNITY
+            </p>
+            <h2 className="font-hand text-[28px] sm:text-3xl md:text-4xl">
+              우리들의 이야기
+            </h2>
+          </div>
+
+          <Link
+            href="/community"
+            className="inline-flex min-h-10 shrink-0 items-center gap-1 text-xs font-bold text-[#668b6c] hover:text-[#405a46] sm:text-sm"
+          >
+            전체 게시글
+            <ArrowRight size={17} />
+          </Link>
         </div>
 
-        <p className="mt-4 break-keep text-[13px] leading-7 text-[#776d59] sm:text-sm sm:leading-8">
-          이 페이지는 육지거북 사육의 일반적인 기초 안내입니다.
-          호스필드, 헤르만, 설카타, 레오파드 등은
-          서식 환경과 성장 크기, 필요한 온습도 및 식단이 다릅니다.
-          구체적인 사육 조건은 반드시 해당 종과 개체 상태에 맞춰
-          확인해야 합니다.
-        </p>
+        <div className="rounded-[22px] border border-[#d8e4d3] bg-white px-4 py-9 text-center sm:rounded-[24px] sm:px-6 sm:py-12">
+          <Camera size={34} className="mx-auto text-[#94af95]" />
 
-        <p className="mt-3 break-keep text-[13px] leading-7 text-[#776d59] sm:text-sm sm:leading-8">
-          건강 이상이 의심된다면 온라인 정보만으로 판단하지 말고
-          파충류 진료가 가능한 수의사에게 상담하세요.
-        </p>
+          <h3 className="font-hand mt-4 text-2xl">
+            거북이 이야기를 나눠보세요!
+          </h3>
+
+          <p className="mt-3 break-keep text-[13px] leading-7 text-[#829483] sm:text-sm">
+            우리 거북이의 사진과 일상을 공유하고,
+            <br className="hidden sm:block" />
+            궁금한 점을 자유롭게 질문할 수 있어요.
+          </p>
+
+          <Link
+            href="/community"
+            className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#527558]"
+          >
+            커뮤니티 둘러보기
+            <ArrowRight size={17} />
+          </Link>
+        </div>
       </section>
 
       {/* 하단 안내 */}
-      <section className="mt-10 rounded-[22px] bg-[#e7efe1] px-5 py-9 text-center sm:mt-12 sm:rounded-[28px] sm:px-7 sm:py-12">
-        <Turtle
-          size={36}
-          className="mx-auto text-[#62866a] sm:h-10 sm:w-10"
-        />
+      <section className="mt-11 rounded-[22px] bg-[#e9f1e5] px-5 py-9 text-center sm:mt-16 sm:rounded-[28px] sm:px-7 sm:py-12">
+        <Heart size={29} className="mx-auto text-[#84a487]" />
 
-        <h2 className="font-hand mt-4 break-keep text-[29px] leading-snug sm:text-4xl">
-          천천히, 하나씩 배워가요.
+        <h2 className="font-hand mx-auto mt-4 max-w-xl break-keep text-[27px] leading-snug sm:text-3xl md:text-4xl">
+          함께하면 더 즐거운 거북이 생활
         </h2>
 
-        <p className="mx-auto mt-4 max-w-lg break-keep text-[13px] leading-7 text-[#687c6b] sm:text-sm">
-          거북이와 함께하는 매일이
-          건강하고 즐거운 시간이 되기를 바랍니다.
+        <p className="mt-4 break-keep text-[13px] leading-7 text-[#718573] sm:text-sm">
+          작은 궁금증도 편하게 나눌 수 있는 공간을
+          만들어가고 있습니다.
         </p>
 
         <Link
-          href="/"
-          className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#62866a] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#4d7054]"
+          href="/community"
+          className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#668b6c] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#527558]"
         >
-          홈으로 돌아가기
+          함께하기
           <ArrowRight size={17} />
         </Link>
       </section>
