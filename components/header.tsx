@@ -4,17 +4,25 @@ import { Turtle } from "lucide-react";
 import AuthStatus from "@/components/auth-status";
 
 const nav = [
-  { href: "/", label: "홈" },
-  { href: "/guide", label: "사육 가이드" },
-  { href: "/species", label: "거북이 도감" },
-  { href: "/community", label: "커뮤니티" },
-  { href: "/growth", label: "성장일기" },
+  { href: "/", label: "홈", shortLabel: "홈" },
+  { href: "/growth", label: "성장일기", shortLabel: "성장일기" },
+  { href: "/community", label: "커뮤니티", shortLabel: "커뮤니티" },
+  {
+    href: "/guide",
+    label: "육지거북 가이드",
+    shortLabel: "육지거북",
+  },
+  {
+    href: "/species",
+    label: "수생거북 가이드",
+    shortLabel: "수생거북",
+  },
 ];
 
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-[#e5ebdf] bg-[#fffefa]/95 backdrop-blur">
-      <div className="container-site flex min-h-[68px] items-center justify-between gap-2 py-3 md:min-h-[76px] md:gap-4">
+      <div className="container-site flex min-h-[68px] items-center justify-between gap-2 py-3 md:min-h-[76px] md:gap-3">
         <Link
           href="/"
           className="flex min-w-0 shrink-0 items-center gap-2 md:gap-3"
@@ -34,18 +42,23 @@ export default function Header() {
           </div>
         </Link>
 
-        <div className="flex min-w-0 items-center gap-4 lg:gap-7">
+        <div className="flex min-w-0 items-center gap-2 lg:gap-5">
           <nav
             aria-label="PC 주요 메뉴"
-            className="hidden items-center gap-4 md:flex lg:gap-6"
+            className="hidden items-center gap-2 md:flex lg:gap-4 xl:gap-5"
           >
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="whitespace-nowrap text-sm font-semibold text-[#607764] transition hover:text-[#3e6647]"
+                className="whitespace-nowrap text-xs font-semibold text-[#607764] transition hover:text-[#3e6647] lg:text-sm"
               >
-                {item.label}
+                <span className="xl:hidden">
+                  {item.shortLabel}
+                </span>
+                <span className="hidden xl:inline">
+                  {item.label}
+                </span>
               </Link>
             ))}
           </nav>
