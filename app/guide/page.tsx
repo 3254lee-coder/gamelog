@@ -89,50 +89,56 @@ const guides = [
 
 export default function GuidePage() {
   return (
-    <main className="container-site min-h-screen pb-24 pt-9 text-[#405a46]">
+    <main className="container-site min-h-screen min-w-0 pb-28 pt-5 text-[#405a46] sm:pt-9 md:pb-24">
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-[#62866a]"
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#62866a]"
       >
         <ArrowLeft size={17} />
         홈으로 돌아가기
       </Link>
 
-      <section className="mt-7 rounded-[28px] bg-[#edf4e7] px-7 py-12 md:px-12 md:py-16">
+      {/* 가이드 소개 */}
+      <section className="mt-4 rounded-[22px] bg-[#edf4e7] px-5 py-8 sm:mt-7 sm:rounded-[28px] sm:px-7 sm:py-12 md:px-12 md:py-16">
         <div className="flex items-center gap-2 text-[#62866a]">
-          <Turtle size={23} />
-          <span className="text-xs font-bold tracking-[0.18em]">
+          <Turtle size={21} className="shrink-0 sm:h-[23px] sm:w-[23px]" />
+          <span className="text-[10px] font-bold tracking-[0.14em] sm:text-xs sm:tracking-[0.18em]">
             TORTOISE CARE GUIDE
           </span>
         </div>
 
-        <h1 className="font-hand mt-5 text-4xl leading-tight md:text-6xl">
+        <h1 className="font-hand mt-4 break-keep text-[30px] leading-[1.4] sm:mt-5 sm:text-4xl sm:leading-tight md:text-6xl">
           처음 키우는 육지거북,
           <br />
           무엇부터 준비할까요?
         </h1>
 
-        <p className="mt-6 max-w-2xl text-sm leading-8 text-[#687c6b] md:text-base">
+        <p className="mt-4 max-w-2xl break-keep text-[13px] leading-7 text-[#687c6b] sm:mt-6 sm:text-sm sm:leading-8 md:text-base">
           육지거북과 함께하는 첫걸음.
+          <br className="sm:hidden" />
           입양 준비부터 사육 환경, 먹이와 건강관리까지
           꼭 알아야 할 기본 내용을 정리했습니다.
         </p>
 
-        <div className="mt-7 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-xs font-semibold text-[#62866a]">
-          <BookOpen size={16} />
+        <div className="mt-5 inline-flex max-w-full items-center gap-2 rounded-full bg-white/80 px-3 py-2 text-[11px] font-semibold text-[#62866a] sm:mt-7 sm:px-4 sm:text-xs">
+          <BookOpen size={15} className="shrink-0 sm:h-4 sm:w-4" />
           초보 사육자를 위한 기초 안내
         </div>
       </section>
 
-      <section className="mt-12">
-        <div className="mb-6 flex items-center gap-2">
-          <ClipboardCheck size={23} className="text-[#62866a]" />
-          <h2 className="font-hand text-3xl md:text-4xl">
+      {/* 가이드 목차 */}
+      <section id="guide-top" className="mt-9 sm:mt-12">
+        <div className="mb-4 flex items-center gap-2 sm:mb-6">
+          <ClipboardCheck
+            size={21}
+            className="shrink-0 text-[#62866a] sm:h-[23px] sm:w-[23px]"
+          />
+          <h2 className="font-hand text-[28px] sm:text-3xl md:text-4xl">
             사육 가이드 목차
           </h2>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
           {guides.map((guide) => {
             const Icon = guide.icon;
 
@@ -140,27 +146,38 @@ export default function GuidePage() {
               <a
                 key={guide.id}
                 href={`#${guide.id}`}
-                className="flex items-center gap-3 rounded-2xl border border-[#e5e9e0] bg-white p-4 transition hover:border-[#9eb89f] hover:bg-[#f7faf5]"
+                className="flex min-h-[82px] min-w-0 flex-col items-start justify-center gap-2 rounded-2xl border border-[#e5e9e0] bg-white p-3 transition hover:border-[#9eb89f] hover:bg-[#f7faf5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#62866a] sm:min-h-[68px] sm:flex-row sm:items-center sm:gap-3 sm:p-4"
               >
                 <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11"
                   style={{ backgroundColor: guide.color }}
                 >
-                  <Icon size={22} className="text-[#62866a]" />
+                  <Icon
+                    size={20}
+                    className="text-[#62866a] sm:h-[22px] sm:w-[22px]"
+                  />
                 </span>
 
-                <span className="min-w-0 flex-1 text-sm font-bold">
+                <span className="min-w-0 flex-1 break-keep text-[12px] font-bold leading-5 sm:text-sm">
                   {guide.title}
                 </span>
 
-                <ArrowRight size={17} className="text-[#9aad9a]" />
+                <ArrowRight
+                  size={17}
+                  className="hidden shrink-0 text-[#9aad9a] sm:block"
+                />
               </a>
             );
           })}
         </div>
+
+        <p className="mt-3 text-center text-[11px] text-[#91a391] sm:hidden">
+          궁금한 항목을 누르면 해당 설명으로 이동합니다.
+        </p>
       </section>
 
-      <section className="mt-12 space-y-6">
+      {/* 각 가이드 상세 내용 */}
+      <section className="mt-9 space-y-4 sm:mt-12 sm:space-y-6">
         {guides.map((guide) => {
           const Icon = guide.icon;
 
@@ -168,51 +185,66 @@ export default function GuidePage() {
             <article
               key={guide.id}
               id={guide.id}
-              className="scroll-mt-28 overflow-hidden rounded-[24px] border border-[#e5e9e0] bg-white shadow-sm"
+              className="scroll-mt-24 overflow-hidden rounded-[20px] border border-[#e5e9e0] bg-white shadow-sm sm:scroll-mt-28 sm:rounded-[24px]"
             >
               <div
-                className="flex items-center gap-4 px-6 py-6 md:px-8"
+                className="flex items-center gap-3 px-4 py-5 sm:gap-4 sm:px-6 sm:py-6 md:px-8"
                 style={{ backgroundColor: guide.color }}
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/75 text-[#62866a]">
-                  <Icon size={27} />
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/75 text-[#62866a] sm:h-12 sm:w-12 sm:rounded-2xl">
+                  <Icon size={24} className="sm:h-[27px] sm:w-[27px]" />
                 </span>
 
-                <div>
-                  <h2 className="font-hand text-3xl">
+                <div className="min-w-0">
+                  <h2 className="font-hand break-keep text-[25px] leading-tight sm:text-3xl">
                     {guide.title}
                   </h2>
-                  <p className="mt-1 text-sm text-[#687c6b]">
+                  <p className="mt-1 text-[12px] text-[#687c6b] sm:text-sm">
                     {guide.subtitle}
                   </p>
                 </div>
               </div>
 
-              <ul className="space-y-4 px-6 py-7 md:px-8">
+              <ul className="space-y-4 px-4 py-6 sm:px-6 sm:py-7 md:px-8">
                 {guide.items.map((item) => (
                   <li
                     key={item}
-                    className="flex items-start gap-3 text-sm leading-7 text-[#617263]"
+                    className="flex items-start gap-3 text-[13px] leading-7 text-[#617263] sm:text-sm"
                   >
-                    <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#8eae8f]" />
-                    <span>{item}</span>
+                    <span
+                      aria-hidden="true"
+                      className="mt-[10px] h-2 w-2 shrink-0 rounded-full bg-[#8eae8f]"
+                    />
+                    <span className="min-w-0 break-keep">
+                      {item}
+                    </span>
                   </li>
                 ))}
               </ul>
+
+              <div className="border-t border-[#f0f3ed] px-4 py-2 text-right sm:hidden">
+                <a
+                  href="#guide-top"
+                  className="inline-flex min-h-10 items-center text-[12px] font-semibold text-[#62866a]"
+                >
+                  목차로 돌아가기
+                </a>
+              </div>
             </article>
           );
         })}
       </section>
 
-      <section className="mt-10 rounded-[24px] border border-[#e6e2d4] bg-[#faf5e8] p-6 md:p-8">
+      {/* 주의사항 */}
+      <section className="mt-9 rounded-[20px] border border-[#e6e2d4] bg-[#faf5e8] p-5 sm:mt-10 sm:rounded-[24px] sm:p-6 md:p-8">
         <div className="flex items-center gap-2 text-[#9c7843]">
-          <AlertCircle size={22} />
-          <h2 className="text-lg font-bold">
+          <AlertCircle size={21} className="shrink-0 sm:h-[22px] sm:w-[22px]" />
+          <h2 className="text-base font-bold sm:text-lg">
             꼭 기억해 주세요
           </h2>
         </div>
 
-        <p className="mt-4 text-sm leading-8 text-[#776d59]">
+        <p className="mt-4 break-keep text-[13px] leading-7 text-[#776d59] sm:text-sm sm:leading-8">
           이 페이지는 육지거북 사육의 일반적인 기초 안내입니다.
           호스필드, 헤르만, 설카타, 레오파드 등은
           서식 환경과 성장 크기, 필요한 온습도 및 식단이 다릅니다.
@@ -220,30 +252,31 @@ export default function GuidePage() {
           확인해야 합니다.
         </p>
 
-        <p className="mt-3 text-sm leading-8 text-[#776d59]">
+        <p className="mt-3 break-keep text-[13px] leading-7 text-[#776d59] sm:text-sm sm:leading-8">
           건강 이상이 의심된다면 온라인 정보만으로 판단하지 말고
           파충류 진료가 가능한 수의사에게 상담하세요.
         </p>
       </section>
 
-      <section className="mt-12 rounded-[28px] bg-[#e7efe1] px-7 py-12 text-center">
+      {/* 하단 안내 */}
+      <section className="mt-10 rounded-[22px] bg-[#e7efe1] px-5 py-9 text-center sm:mt-12 sm:rounded-[28px] sm:px-7 sm:py-12">
         <Turtle
-          size={40}
-          className="mx-auto text-[#62866a]"
+          size={36}
+          className="mx-auto text-[#62866a] sm:h-10 sm:w-10"
         />
 
-        <h2 className="font-hand mt-4 text-4xl">
+        <h2 className="font-hand mt-4 break-keep text-[29px] leading-snug sm:text-4xl">
           천천히, 하나씩 배워가요.
         </h2>
 
-        <p className="mt-4 text-sm leading-7 text-[#687c6b]">
+        <p className="mx-auto mt-4 max-w-lg break-keep text-[13px] leading-7 text-[#687c6b] sm:text-sm">
           거북이와 함께하는 매일이
           건강하고 즐거운 시간이 되기를 바랍니다.
         </p>
 
         <Link
           href="/"
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#62866a] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#4d7054]"
+          className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#62866a] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#4d7054]"
         >
           홈으로 돌아가기
           <ArrowRight size={17} />
