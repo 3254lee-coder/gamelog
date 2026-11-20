@@ -107,7 +107,7 @@ const sections = [
     paragraphs: [
       "서비스명: LIKE TURTLE(거북이처럼)",
       "운영 형태: 개인 운영",
-      "운영자: [운영자 성명 기재]",
+      "운영자: LIKE TURTLE 운영자",
       "문의 이메일: 3254lee@naver.com",
       "시행일: [실제 공개·적용일 기재]",
     ],
