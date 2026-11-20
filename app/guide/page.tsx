@@ -94,3 +94,144 @@ export default function GuidePage() {
         className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#62866a]"
       >
         <ArrowLeft size={17} />
+        홈으로 돌아가기
+      </Link>
+
+      <section className="mt-4 rounded-[22px] bg-[#edf4e7] px-5 py-8 sm:mt-7 sm:rounded-[28px] sm:px-7 sm:py-12 md:px-12 md:py-16">
+        <div className="flex items-center gap-2 text-[#62866a]">
+          <Turtle size={23} />
+          <span className="text-[10px] font-bold tracking-[0.14em] sm:text-xs sm:tracking-[0.18em]">
+            TORTOISE CARE GUIDE
+          </span>
+        </div>
+        <h1 className="font-hand mt-4 break-keep text-[30px] leading-[1.4] sm:mt-5 sm:text-4xl sm:leading-tight md:text-6xl">
+          육지거북 사육 가이드
+        </h1>
+        <p className="mt-4 max-w-2xl break-keep text-[13px] leading-7 text-[#687c6b] sm:mt-6 sm:text-sm sm:leading-8 md:text-base">
+          처음 육지거북을 키우는 분들을 위한 기본 안내입니다.
+          <br />
+          입양 전 준비부터 사육 환경, 조명, 먹이와 건강관리까지 살펴보세요.
+        </p>
+        <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-xs font-semibold text-[#62866a] sm:mt-7">
+          <BookOpen size={16} />
+          초보 사육자를 위한 기초 안내
+        </div>
+      </section>
+
+      <section id="guide-top" className="mt-9 scroll-mt-24 sm:mt-12">
+        <div className="mb-4 flex items-center gap-2 sm:mb-6">
+          <ClipboardCheck size={23} className="text-[#62866a]" />
+          <h2 className="font-hand text-[28px] sm:text-3xl md:text-4xl">
+            사육 가이드 목차
+          </h2>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
+          {guides.map((guide) => {
+            const Icon = guide.icon;
+            return (
+              <a
+                key={guide.id}
+                href={`#${guide.id}`}
+                className="flex min-h-[82px] min-w-0 flex-col items-start justify-center gap-2 rounded-2xl border border-[#e5e9e0] bg-white p-3 transition hover:border-[#9eb89f] hover:bg-[#f7faf5] sm:min-h-[68px] sm:flex-row sm:items-center sm:gap-3 sm:p-4"
+              >
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11"
+                  style={{ backgroundColor: guide.color }}
+                >
+                  <Icon size={21} className="text-[#62866a]" />
+                </span>
+                <span className="min-w-0 flex-1 break-keep text-[12px] font-bold leading-5 sm:text-sm">
+                  {guide.title}
+                </span>
+                <ArrowRight size={17} className="hidden shrink-0 text-[#9aad9a] sm:block" />
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="mt-9 space-y-4 sm:mt-12 sm:space-y-6">
+        {guides.map((guide) => {
+          const Icon = guide.icon;
+          return (
+            <article
+              key={guide.id}
+              id={guide.id}
+              className="scroll-mt-24 overflow-hidden rounded-[20px] border border-[#e5e9e0] bg-white shadow-sm sm:scroll-mt-28 sm:rounded-[24px]"
+            >
+              <div
+                className="flex items-center gap-3 px-4 py-5 sm:gap-4 sm:px-6 sm:py-6 md:px-8"
+                style={{ backgroundColor: guide.color }}
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/75 text-[#62866a] sm:h-12 sm:w-12 sm:rounded-2xl">
+                  <Icon size={25} />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="font-hand break-keep text-[25px] leading-tight sm:text-3xl">
+                    {guide.title}
+                  </h2>
+                  <p className="mt-1 text-xs text-[#687c6b] sm:text-sm">
+                    {guide.subtitle}
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-4 px-4 py-6 sm:px-6 sm:py-7 md:px-8">
+                {guide.items.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-3 text-[13px] leading-7 text-[#617263] sm:text-sm"
+                  >
+                    <span aria-hidden="true" className="mt-[10px] h-2 w-2 shrink-0 rounded-full bg-[#8eae8f]" />
+                    <span className="min-w-0 break-keep">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="border-t border-[#f0f3ed] px-4 py-2 text-right sm:hidden">
+                <a
+                  href="#guide-top"
+                  className="inline-flex min-h-10 items-center text-xs font-semibold text-[#62866a]"
+                >
+                  목차로 돌아가기
+                </a>
+              </div>
+            </article>
+          );
+        })}
+      </section>
+
+      <section className="mt-9 rounded-[20px] border border-[#e6e2d4] bg-[#faf5e8] p-5 sm:mt-10 sm:rounded-[24px] sm:p-6 md:p-8">
+        <div className="flex items-center gap-2 text-[#9c7843]">
+          <AlertCircle size={22} />
+          <h2 className="text-lg font-bold">꼭 기억해 주세요</h2>
+        </div>
+        <p className="mt-4 break-keep text-[13px] leading-7 text-[#776d59] sm:text-sm sm:leading-8">
+          이 페이지는 육지거북 사육의 일반적인 기초 안내입니다.
+          호스필드, 헤르만, 설카타, 레오파드 등은 서식 환경과 성장 크기,
+          필요한 온습도 및 식단이 다릅니다. 구체적인 사육 조건은 반드시
+          해당 종과 개체 상태에 맞춰 확인해야 합니다.
+        </p>
+        <p className="mt-3 break-keep text-[13px] leading-7 text-[#776d59] sm:text-sm sm:leading-8">
+          건강 이상이 의심된다면 온라인 정보만으로 판단하지 말고
+          파충류 진료가 가능한 수의사에게 상담하세요.
+        </p>
+      </section>
+
+      <section className="mt-10 rounded-[22px] bg-[#e7efe1] px-5 py-9 text-center sm:mt-12 sm:rounded-[28px] sm:px-7 sm:py-12">
+        <Turtle size={40} className="mx-auto text-[#62866a]" />
+        <h2 className="font-hand mt-4 break-keep text-[29px] leading-snug sm:text-4xl">
+          천천히, 하나씩 배워가요.
+        </h2>
+        <p className="mt-4 text-[13px] leading-7 text-[#687c6b] sm:text-sm">
+          거북이와 함께하는 매일이 건강하고 즐거운 시간이 되기를 바랍니다.
+        </p>
+        <Link
+          href="/species"
+          className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#62866a] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#4d7054]"
+        >
+          수생거북 가이드 보기
+          <ArrowRight size={17} />
+        </Link>
+      </section>
+    </main>
+  );
+}
