@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -44,13 +43,20 @@ export const metadata: Metadata = {
     "거북이 사육 가이드",
     "거북이 커뮤니티",
     "거북이 성장일기",
+    "거북이 키우기",
+    "거북이 사육방법",
+    "거북이 정보",
     "호스필드 육지거북",
     "헤르만 육지거북",
     "설카타 육지거북",
   ],
 
-  alternates: {
-    canonical: siteUrl,
+  verification: {
+    google: "obvuDWQvvT_CjtlPoauYG-3e0I1M1x0InlZv6BB3azg",
+    other: {
+      "naver-site-verification":
+        "bc822860d02c2737861ce058b46c8f86577ef5f3",
+    },
   },
 
   openGraph: {
@@ -80,6 +86,13 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 
