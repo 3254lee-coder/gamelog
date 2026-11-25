@@ -17,6 +17,8 @@ import { getSupabase } from "@/lib/supabase";
 
 type Mode = "login" | "signup";
 
+const POLICY_VERSION = "2026-11-25";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,11 +27,17 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [privacyRead, setPrivacyRead] = useState(false);
+
   const router = useRouter();
   const isLogin = mode === "login";
+  const allAgreed = termsAgreed && privacyRead;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (busy) return;
 
     const db = getSupabase();
 
@@ -49,6 +57,11 @@ export default function LoginPage() {
       return;
     }
 
+    if (!isLogin && !allAgreed) {
+      setMessage("이용약관에 동의하고 개인정보 처리 안내를 확인해 주세요.");
+      return;
+    }
+
     setBusy(true);
     setMessage("");
 
@@ -63,6 +76,11 @@ export default function LoginPage() {
             data: {
               nickname: cleanNickname,
               display_name: cleanNickname,
+              terms_agreed: true,
+              privacy_read: true,
+              terms_version: POLICY_VERSION,
+              privacy_version: POLICY_VERSION,
+              policy_acknowledged_at: new Date().toISOString(),
             },
           },
         });
@@ -103,6 +121,8 @@ export default function LoginPage() {
   }
 
   async function resetPassword() {
+    if (busy) return;
+
     const db = getSupabase();
 
     if (!db) {
@@ -148,12 +168,13 @@ export default function LoginPage() {
   function switchMode() {
     setMode(isLogin ? "signup" : "login");
     setMessage("");
+    setTermsAgreed(false);
+    setPrivacyRead(false);
   }
 
   return (
     <main className="container-site min-h-[75vh] min-w-0 pb-28 pt-8 text-[#405a46] sm:pt-14 md:pb-24">
       <div className="mx-auto w-full max-w-md">
-        {/* 페이지 소개 */}
         <div className="relative mb-7 text-center sm:mb-9">
           <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#e8f1e2] text-[#668b6c] sm:h-20 sm:w-20 sm:rounded-[26px]">
             <Turtle
@@ -202,7 +223,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* 로그인 및 회원가입 */}
         <form
           onSubmit={submit}
           className="rounded-[22px] border border-[#e3e9df] bg-white p-5 shadow-sm sm:rounded-[28px] sm:p-7 md:p-9"
@@ -211,10 +231,7 @@ export default function LoginPage() {
             {!isLogin && (
               <label className="block">
                 <span className="mb-2 flex items-center gap-2 text-sm font-bold">
-                  <UserRound
-                    size={17}
-                    className="text-[#668b6c]"
-                  />
+                  <UserRound size={17} className="text-[#668b6c]" />
                   닉네임
                 </span>
 
@@ -237,10 +254,7 @@ export default function LoginPage() {
 
             <label className="block">
               <span className="mb-2 flex items-center gap-2 text-sm font-bold">
-                <Mail
-                  size={17}
-                  className="text-[#668b6c]"
-                />
+                <Mail size={17} className="text-[#668b6c]" />
                 이메일
               </span>
 
@@ -263,10 +277,7 @@ export default function LoginPage() {
 
             <label className="block">
               <span className="mb-2 flex items-center gap-2 text-sm font-bold">
-                <LockKeyhole
-                  size={17}
-                  className="text-[#668b6c]"
-                />
+                <LockKeyhole size={17} className="text-[#668b6c]" />
                 비밀번호
               </span>
 
@@ -307,10 +318,90 @@ export default function LoginPage() {
             </div>
           )}
 
+          {!isLogin && (
+            <fieldset
+              disabled={busy}
+              className="mt-6 rounded-2xl border border-[#e3e9df] bg-[#f5f9f2] p-4"
+            >
+              <legend className="sr-only">
+                서비스 이용 안내
+              </legend>
+
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-bold">
+                <input
+                  type="checkbox"
+                  checked={allAgreed}
+                  onChange={(event) => {
+                    setTermsAgreed(event.target.checked);
+                    setPrivacyRead(event.target.checked);
+                  }}
+                  className="h-5 w-5 shrink-0 accent-[#668b6c]"
+                />
+                전체 확인 및 동의
+              </label>
+
+              <div className="my-2 border-t border-[#dce7d8]" />
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 text-xs font-semibold">
+                  <input
+                    required
+                    type="checkbox"
+                    checked={termsAgreed}
+                    onChange={(event) =>
+                      setTermsAgreed(event.target.checked)
+                    }
+                    className="h-[18px] w-[18px] shrink-0 accent-[#668b6c]"
+                  />
+                  이용약관 동의 (필수)
+                </label>
+
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#668b6c] underline"
+                >
+                  보기
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 text-xs font-semibold">
+                  <input
+                    required
+                    type="checkbox"
+                    checked={privacyRead}
+                    onChange={(event) =>
+                      setPrivacyRead(event.target.checked)
+                    }
+                    className="h-[18px] w-[18px] shrink-0 accent-[#668b6c]"
+                  />
+                  개인정보 처리 안내 확인 (필수)
+                </label>
+
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#668b6c] underline"
+                >
+                  보기
+                </Link>
+              </div>
+
+              <p className="mt-3 break-keep text-[11px] leading-5 text-[#718573]">
+                회원 인증과 서비스 제공에 필요한 이메일,
+                닉네임 및 인증정보를 처리합니다.
+                이용약관과 개인정보처리방침을 확인해 주세요.
+              </p>
+            </fieldset>
+          )}
+
           <button
             type="submit"
-            disabled={busy}
-            className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#668b6c] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#527558] disabled:opacity-50 sm:mt-7"
+            disabled={busy || (!isLogin && !allAgreed)}
+            className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#668b6c] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#527558] disabled:cursor-not-allowed disabled:opacity-50 sm:mt-7"
           >
             {busy
               ? "처리 중..."
@@ -351,7 +442,6 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* 비회원 커뮤니티 열람 */}
         <div className="mt-6 text-center sm:mt-8">
           <Link
             href="/community"
