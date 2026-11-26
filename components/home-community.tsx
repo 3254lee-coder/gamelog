@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { getSupabase } from "@/lib/supabase";
+import {useSafety} from "@/components/member-safety";
 import PostAuthor from "@/components/post-author";
 
 type Post = {
@@ -55,6 +56,7 @@ function formatDate(value: string) {
 }
 
 export default function HomeCommunity() {
+ const {blocked}=useSafety();
   const [posts, setPosts] = useState<HomePosts>({
     latest: [],
     popular: [],
@@ -174,6 +176,7 @@ export default function HomeCommunity() {
       );
     }
 
+    items=items.filter(post=>!blocked.includes(post.author_id));
     if (!items.length) {
       return (
         <div className="py-10 text-center">

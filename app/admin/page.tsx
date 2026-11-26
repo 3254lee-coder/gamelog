@@ -1,6 +1,7 @@
 
 "use client";
 
+import {ReportQueue} from "@/components/member-safety";
 import {
   useCallback,
   useEffect,
@@ -589,7 +590,7 @@ export default function AdminPage() {
           </button>
         </div>
       ) : data && (
-        <>
+        <><ReportQueue />
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-[#829482]">
               최근 갱신: {formatDate(updatedAt)}

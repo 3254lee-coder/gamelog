@@ -13,6 +13,7 @@ import {
   Turtle,
   UserRound,
 } from "lucide-react";
+import {authMessage} from "@/lib/auth-message";
 import { getSupabase } from "@/lib/supabase";
 
 type Mode = "login" | "signup";
@@ -111,9 +112,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       setMessage(
-        error instanceof Error
-          ? error.message
-          : "요청을 처리하지 못했습니다."
+        authMessage(error, "요청을 처리하지 못했습니다.")
       );
     } finally {
       setBusy(false);
@@ -156,9 +155,7 @@ export default function LoginPage() {
       );
     } catch (error) {
       setMessage(
-        error instanceof Error
-          ? error.message
-          : "비밀번호 재설정 요청에 실패했습니다."
+        authMessage(error, "비밀번호 재설정 요청에 실패했습니다.")
       );
     } finally {
       setBusy(false);

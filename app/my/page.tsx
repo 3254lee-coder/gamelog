@@ -1,6 +1,7 @@
 
 "use client";
 
+import {AccountSafety} from "@/components/member-safety";
 import {
   useCallback,
   useEffect,
@@ -56,7 +57,6 @@ function nicknameOf(user: User) {
     user.user_metadata?.nickname ||
       user.user_metadata?.display_name ||
       user.user_metadata?.name ||
-      user.email?.split("@")[0] ||
       "거북이 회원"
   );
 }
@@ -584,6 +584,6 @@ export default function MyPage() {
           </section>
         </>
       )}
-    </main>
+    <AccountSafety /></main>
   );
 }

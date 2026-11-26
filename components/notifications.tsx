@@ -108,8 +108,6 @@ export default function Notifications({
   }, [userId]);
 
   useEffect(() => {
-    void load();
-
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") {
         void load();

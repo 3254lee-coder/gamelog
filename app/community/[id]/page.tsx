@@ -28,6 +28,7 @@ import {
   Turtle,
 } from "lucide-react";
 
+import {SafetyActions,useSafety} from "@/components/member-safety";
 import PostAuthor from "@/components/post-author";
 import CommunityComments from "@/components/community-comments";
 import { PostNoticeControl } from "@/components/community-notices";
@@ -86,6 +87,7 @@ function formatDate(value: string) {
 }
 
 export default function CommunityPostPage() {
+ const {blocked}=useSafety();
   const params = useParams();
   const router = useRouter();
   const postId = params.id as string;
@@ -289,6 +291,7 @@ export default function CommunityPostPage() {
     };
   }, [postId, supabase]);
 
+  const viewerId=user?.id;
   // 좋아요 조회
   useEffect(() => {
     if (!supabase || !postId) return;
@@ -315,7 +318,7 @@ export default function CommunityPostPage() {
         );
       }
 
-      if (user) {
+      if (viewerId) {
         const {
           data,
           error: likeError,
@@ -323,7 +326,7 @@ export default function CommunityPostPage() {
           .from("tortoise_post_likes")
           .select("post_id")
           .eq("post_id", postId)
-          .eq("user_id", user.id)
+          .eq("user_id", viewerId)
           .maybeSingle();
 
         if (!active) return;
@@ -341,7 +344,7 @@ export default function CommunityPostPage() {
     return () => {
       active = false;
     };
-  }, [postId, supabase, user?.id]);
+  }, [postId, supabase, viewerId]);
 
   function getImageUrl(path: string) {
     if (!supabase) return "";
@@ -954,6 +957,7 @@ export default function CommunityPostPage() {
     }
   }
 
+  if(post && blocked.includes(post.author_id)) return <main className="container-site py-12">차단한 회원의 게시글입니다.</main>;
   const isAdmin = user?.id === ADMIN_UID;
 
   const isPostOwner =
@@ -1270,6 +1274,7 @@ export default function CommunityPostPage() {
                     />
                   </div>
 
+                  <SafetyActions kind="post" id={post.id} author={post.author_id}/>
                   {/* 공지글 관리 */}
                   <PostNoticeControl
                     key={post.id}

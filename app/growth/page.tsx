@@ -435,16 +435,19 @@ export default function GrowthPage() {
     );
 
     if (paths.length) {
-      const signed = await Promise.all(
-        paths.map(async (path) => {
-          const { data } = await db.storage
-            .from(BUCKET)
-            .createSignedUrl(path, 3600);
-          return [path, data?.signedUrl || ""] as const;
-        })
-      );
-
-      setPhotoUrls(Object.fromEntries(signed));
+      const urls: Record<string, string> = {};
+      // Keep older, photo-heavy diaries within a bounded request size.
+      for (let start = 0; start < paths.length; start += 100) {
+        const batch = paths.slice(start, start + 100);
+        const { data, error } = await db.storage
+          .from(BUCKET)
+          .createSignedUrls(batch, 3600);
+        if (error) setMessage("일부 사진을 불러오지 못했습니다.");
+        for (const item of data ?? []) {
+          if (item.path && item.signedUrl) urls[item.path] = item.signedUrl;
+        }
+      }
+      setPhotoUrls(urls);
     } else {
       setPhotoUrls({});
     }

@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 
+import {useSafety,SafetyActions} from "@/components/member-safety";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 
@@ -43,7 +44,6 @@ function getNickname(user: User) {
     user.user_metadata?.nickname ||
     user.user_metadata?.display_name ||
     user.user_metadata?.name ||
-    user.email?.split("@")[0] ||
     "회원"
   ).trim().slice(0, 20) || "회원";
 }
@@ -68,6 +68,7 @@ export default function CommunityComments({
   postId: string;
   user: User | null;
 }) {
+  const {blocked}=useSafety();
   const [comments, setComments] =
     useState<Comment[]>([]);
 
@@ -352,6 +353,7 @@ export default function CommunityComments({
     comment: Comment,
     isReply = false
   ) {
+    if(comment.author_id && blocked.includes(comment.author_id)) return null;
     const isOwner =
       !!user &&
       user.id === comment.author_id;
@@ -392,6 +394,7 @@ export default function CommunityComments({
             </p>
           </div>
 
+          <SafetyActions kind="comment" id={comment.id} author={comment.author_id}/>
           {(isOwner || isAdmin) && (
             <div className="flex shrink-0 items-center gap-2">
               {isOwner && (

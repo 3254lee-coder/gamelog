@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { SafetyProvider } from "@/components/member-safety";
 import Header from "@/components/header";
 import MobileNav from "@/components/mobile-nav";
 import SiteAnalytics from "@/components/site-analytics";
@@ -18,7 +19,7 @@ const withdrawalEmail =
   encodeURIComponent("LIKE TURTLE 회원 탈퇴 문의") +
   "&body=" +
   encodeURIComponent(
-    "안녕하세요.\nLIKE TURTLE 회원 탈퇴를 문의합니다.\n\n가입 이메일: \n문의 내용: \n\n※ 비밀번호는 입력하지 마세요."
+    "안녕하세요.\nLIKE TURTLE 회원 탈퇴를 문의합니다.\n\n가입 이메일: \n문의 내용: \n\n※ 비밀번호는 입력하지 마세요.",
   );
 
 export const metadata: Metadata = {
@@ -55,8 +56,7 @@ export const metadata: Metadata = {
   verification: {
     google: "obvuDWQvvT_CjtlPoauYG-3e0I1M1x0InlZv6BB3azg",
     other: {
-      "naver-site-verification":
-        "bc822860d02c2737861ce058b46c8f86577ef5f3",
+      "naver-site-verification": "bc822860d02c2737861ce058b46c8f86577ef5f3",
     },
   },
 
@@ -97,71 +97,61 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
       <body className="min-w-0 overflow-x-hidden">
-        <Header />
+        <SafetyProvider>
+          <Header />
 
-        {children}
+          {children}
 
-        <footer className="mt-24 border-t border-[#e5ebdf] bg-[#fffefa] py-9 max-md:mb-20">
-          <div className="container-site flex flex-col items-center justify-between gap-4 text-center text-xs text-[#829482] sm:flex-row sm:text-left">
-            <div className="flex flex-col gap-1">
-              <span>
-                © 2026 LIKE TURTLE · 거북이처럼
-              </span>
+          <footer className="mt-24 border-t border-[#e5ebdf] bg-[#fffefa] py-9 max-md:mb-20">
+            <div className="container-site flex flex-col items-center justify-between gap-4 text-center text-xs text-[#829482] sm:flex-row sm:text-left">
+              <div className="flex flex-col gap-1">
+                <span>© 2026 LIKE TURTLE · 거북이처럼</span>
 
-              <span>조금 느리면 어때</span>
+                <span>조금 느리면 어때</span>
+              </div>
+
+              <nav
+                aria-label="사이트 운영 정보"
+                className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-end"
+              >
+                <Link
+                  href="/privacy"
+                  className="inline-flex min-h-10 items-center font-bold text-[#668b6c] transition hover:text-[#405a46] hover:underline"
+                >
+                  개인정보처리방침
+                </Link>
+
+                <span aria-hidden="true" className="text-[#cbd8c7]">
+                  |
+                </span>
+
+                <Link
+                  href="/terms"
+                  className="inline-flex min-h-10 items-center transition hover:text-[#405a46] hover:underline"
+                >
+                  이용약관
+                </Link>
+
+                <span aria-hidden="true" className="text-[#cbd8c7]">
+                  |
+                </span>
+
+                <a
+                  href={withdrawalEmail}
+                  className="inline-flex min-h-10 items-center font-semibold text-[#668b6c] transition hover:text-[#405a46] hover:underline"
+                >
+                  회원 탈퇴 문의
+                </a>
+              </nav>
             </div>
+          </footer>
 
-            <nav
-              aria-label="사이트 운영 정보"
-              className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-end"
-            >
-              <Link
-                href="/privacy"
-                className="inline-flex min-h-10 items-center font-bold text-[#668b6c] transition hover:text-[#405a46] hover:underline"
-              >
-                개인정보처리방침
-              </Link>
-
-              <span
-                aria-hidden="true"
-                className="text-[#cbd8c7]"
-              >
-                |
-              </span>
-
-              <Link
-                href="/terms"
-                className="inline-flex min-h-10 items-center transition hover:text-[#405a46] hover:underline"
-              >
-                이용약관
-              </Link>
-
-              <span
-                aria-hidden="true"
-                className="text-[#cbd8c7]"
-              >
-                |
-              </span>
-
-              <a
-                href={withdrawalEmail}
-                className="inline-flex min-h-10 items-center font-semibold text-[#668b6c] transition hover:text-[#405a46] hover:underline"
-              >
-                회원 탈퇴 문의
-              </a>
-            </nav>
-          </div>
-        </footer>
-
-        <MobileNav />
+          <MobileNav />
+        </SafetyProvider>
 
         <SiteAnalytics />
       </body>

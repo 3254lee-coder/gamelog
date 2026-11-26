@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { CommunityNotices } from "@/components/community-notices";
+import {useSafety} from "@/components/member-safety";
 import PostAuthor from "@/components/post-author";
 
 type Category = "free" | "tips" | "question";
@@ -145,6 +146,7 @@ function normalizePost(item: BrowsePostRow): Post {
 }
 
 export default function CommunityPage() {
+ const {blocked}=useSafety();
   const supabase = useMemo(() => getSupabase(), []);
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -670,7 +672,7 @@ export default function CommunityPage() {
             </div>
           ) : (
             <div className="divide-y divide-[#edf0e9]">
-              {posts.map((post) => {
+              {posts.filter(post=>!blocked.includes(post.author_id)).map((post) => {
                 const itemCategory =
                   getCategory(post.category);
 

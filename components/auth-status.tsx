@@ -24,7 +24,6 @@ function getNickname(user: User) {
     user.user_metadata?.nickname ||
     user.user_metadata?.display_name ||
     user.user_metadata?.name ||
-    user.email?.split("@")[0] ||
     "내 계정"
   );
 }

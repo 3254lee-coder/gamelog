@@ -1,0 +1,9 @@
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+export const metadata: Metadata = {
+  title: "회원 가입과 로그인",
+  robots: { index: false, follow: false },
+};
+export default function Layout({ children }: { children: ReactNode }) {
+  return children;
+}
