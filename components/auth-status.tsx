@@ -10,6 +10,7 @@ import {
   ChevronDown,
   LogOut,
   UserRound,
+  ShieldCheck,
 } from "lucide-react";
 
 import { getSupabase } from "@/lib/supabase";
@@ -242,6 +243,21 @@ export default function AuthStatus() {
               마이페이지
             </Link>
 
+            {isAdmin && (
+  <Link
+    href="/admin"
+    role="menuitem"
+    onClick={() => setOpen(false)}
+    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-[#527558] transition hover:bg-[#edf5e8]"
+  >
+    <ShieldCheck
+      size={18}
+      className="text-[#668b6c]"
+    />
+
+    관리자 대시보드
+  </Link>
+)}
             <button
               type="button"
               role="menuitem"
