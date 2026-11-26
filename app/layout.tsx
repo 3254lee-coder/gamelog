@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import Header from "@/components/header";
 import MobileNav from "@/components/mobile-nav";
+import SiteAnalytics from "@/components/site-analytics";
 import "./globals.css";
 
 const siteUrl = "https://like-turtle.vercel.app";
@@ -161,6 +162,8 @@ export default function RootLayout({
         </footer>
 
         <MobileNav />
+
+        <SiteAnalytics />
       </body>
     </html>
   );
