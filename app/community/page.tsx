@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
 import { CommunityNotices } from "@/components/community-notices";
+import PostAuthor from "@/components/post-author";
 
 type Category = "free" | "tips" | "question";
 type CategoryFilter = "all" | Category;
@@ -59,7 +61,11 @@ type BrowsePostRow = {
   total_count: number | null;
 };
 
-const ADMIN_UID = "5226f8c2-84ca-4189-b2a1-3a569bd3205c";
+type AuthorRow = {
+  post_id: string;
+  nickname: string;
+};
+
 const BUCKET = "tortoise-post-images";
 const PAGE_SIZE = 10;
 
@@ -117,6 +123,7 @@ function normalizeCategory(value: string): Category {
   ) {
     return value;
   }
+
   return "free";
 }
 
@@ -141,11 +148,17 @@ export default function CommunityPage() {
   const supabase = useMemo(() => getSupabase(), []);
 
   const [posts, setPosts] = useState<Post[]>([]);
+
+  const [authors, setAuthors] = useState<
+    Record<string, string>
+  >({});
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [category, setCategory] =
     useState<CategoryFilter>("all");
+
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOrder>("newest");
   const [recentOnly, setRecentOnly] = useState(false);
@@ -190,19 +203,54 @@ export default function CommunityPage() {
             "커뮤니티 목록 조회 실패:",
             fetchError.message
           );
+
           setError(
             "게시글을 불러오지 못했습니다. Supabase SQL 설정을 확인해 주세요."
           );
+
           setPosts([]);
+          setAuthors({});
           setTotalCount(0);
           return;
         }
 
         const rows =
           (data ?? []) as BrowsePostRow[];
+
         const loadedPosts = rows.map(normalizePost);
 
+        const authorMap: Record<string, string> = {};
+
+        if (loadedPosts.length > 0) {
+          const authorResult = await supabase.rpc(
+            "get_tortoise_post_authors",
+            {
+              p_post_ids: loadedPosts.map(
+                (post) => post.id
+              ),
+            }
+          );
+
+          if (!active) return;
+
+          if (authorResult.error) {
+            console.error(
+              "작성자 조회 실패:",
+              authorResult.error.message
+            );
+          } else {
+            for (const author of (
+              authorResult.data ?? []
+            ) as AuthorRow[]) {
+              authorMap[author.post_id] =
+                author.nickname;
+            }
+          }
+        }
+
+        setAuthors(authorMap);
         setPosts(loadedPosts);
+
         setTotalCount(
           loadedPosts.length > 0
             ? loadedPosts[0].total_count
@@ -211,11 +259,17 @@ export default function CommunityPage() {
       } catch (caught) {
         if (!active) return;
 
-        console.error("커뮤니티 목록 오류:", caught);
+        console.error(
+          "커뮤니티 목록 오류:",
+          caught
+        );
+
         setError(
           "게시글을 불러오는 중 오류가 발생했습니다."
         );
+
         setPosts([]);
+        setAuthors({});
         setTotalCount(0);
       } finally {
         if (active) setLoading(false);
@@ -280,6 +334,7 @@ export default function CommunityPage() {
     }
 
     setPage(nextPage);
+
     window.scrollTo({
       top: 0,
       behavior: "smooth",
@@ -295,10 +350,12 @@ export default function CommunityPage() {
   }
 
   const startPage = Math.max(1, page - 2);
+
   const endPage = Math.min(
     totalPages,
     startPage + 4
   );
+
   const adjustedStartPage = Math.max(
     1,
     endPage - 4
@@ -342,6 +399,7 @@ export default function CommunityPage() {
       <section className="mt-4 rounded-[22px] bg-[#eaf2e4] px-5 py-8 sm:mt-7 sm:rounded-[28px] sm:px-7 sm:py-12 md:px-12 md:py-16">
         <div className="flex items-center gap-2 text-[#62866a]">
           <Turtle size={22} />
+
           <span className="text-[10px] font-bold tracking-[0.15em] sm:text-xs sm:tracking-[0.18em]">
             TORTOISE COMMUNITY
           </span>
@@ -356,6 +414,7 @@ export default function CommunityPage() {
           <br />
           사육 노하우와 궁금한 이야기까지.
           <br className="hidden sm:block" />
+
           <span className="sm:ml-1">
             서로의 경험을 나누며 함께 성장해요.
           </span>
@@ -367,7 +426,7 @@ export default function CommunityPage() {
         </div>
       </section>
 
-      {/* 카테고리: 모바일은 간결하게 */}
+      {/* 카테고리 */}
       <section
         aria-label="게시판 카테고리"
         className="mt-6 grid grid-cols-3 gap-2 sm:mt-10 sm:gap-4"
@@ -397,7 +456,9 @@ export default function CommunityPage() {
             >
               <div
                 className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white/75 sm:mx-0 sm:h-12 sm:w-12 sm:rounded-2xl"
-                style={{ color: item.color }}
+                style={{
+                  color: item.color,
+                }}
               >
                 <Icon
                   size={23}
@@ -409,6 +470,7 @@ export default function CommunityPage() {
                 <span className="sm:hidden">
                   {item.shortName}
                 </span>
+
                 <span className="hidden sm:inline">
                   {item.name}
                 </span>
@@ -450,6 +512,7 @@ export default function CommunityPage() {
           </Link>
         </div>
 
+        {/* 공지사항 */}
         <CommunityNotices />
 
         {/* 검색 및 정렬 */}
@@ -482,12 +545,21 @@ export default function CommunityPage() {
             aria-label="게시글 정렬"
             className="min-h-12 w-full rounded-2xl border border-[#dce7d8] bg-white px-4 py-3 text-sm text-[#405a46] outline-none sm:w-auto"
           >
-            <option value="newest">최신순</option>
+            <option value="newest">
+              최신순
+            </option>
+
             <option value="popular">
               인기순 (좋아요 우선)
             </option>
-            <option value="views">조회수순</option>
-            <option value="oldest">오래된순</option>
+
+            <option value="views">
+              조회수순
+            </option>
+
+            <option value="oldest">
+              오래된순
+            </option>
           </select>
         </div>
 
@@ -623,11 +695,6 @@ export default function CommunityPage() {
                               "게시글"}
                           </span>
 
-                          {post.author_id === ADMIN_UID && (
-                            <span className="rounded-full bg-[#e4efdf] px-2 py-1 text-[11px] font-bold text-[#405a46]">
-                              운영자
-                            </span>
-                          )}
                           <span className="text-[11px] text-[#9aa99a] sm:text-xs">
                             {formatDate(
                               post.created_at
@@ -644,6 +711,7 @@ export default function CommunityPage() {
                             0 && (
                             <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-[#719273] sm:text-xs">
                               <Camera size={14} />
+
                               {
                                 post.image_paths
                                   .length
@@ -652,13 +720,26 @@ export default function CommunityPage() {
                           )}
                         </div>
 
-                        <p className="mt-1.5 line-clamp-2 break-words text-[13px] leading-5 text-[#819282] sm:mt-2 sm:text-sm sm:leading-6">
+                        {/* 작성자 닉네임 */}
+                        <div className="mt-2">
+                          <PostAuthor
+                            postId={post.id}
+                            authorId={post.author_id}
+                            nickname={
+                              authors[post.id] ||
+                              "회원"
+                            }
+                          />
+                        </div>
+
+                        <p className="mt-2 line-clamp-2 break-words text-[13px] leading-5 text-[#819282] sm:text-sm sm:leading-6">
                           {post.content}
                         </p>
 
                         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] text-[#879989] sm:mt-4 sm:gap-x-4 sm:text-xs">
                           <span className="inline-flex items-center gap-1 text-[#c48b91]">
                             <Heart size={14} />
+
                             {formatNumber(
                               post.like_count
                             )}
@@ -666,6 +747,7 @@ export default function CommunityPage() {
 
                           <span className="inline-flex items-center gap-1">
                             <Eye size={14} />
+
                             {formatNumber(
                               post.view_count
                             )}
@@ -675,6 +757,7 @@ export default function CommunityPage() {
                             <MessageCircle
                               size={14}
                             />
+
                             {formatNumber(
                               post.comment_count
                             )}
@@ -727,38 +810,34 @@ export default function CommunityPage() {
                 <ChevronLeft size={19} />
               </button>
 
-              {pageNumbers.map(
-                (pageNumber) => (
-                  <button
-                    key={pageNumber}
-                    type="button"
-                    onClick={() =>
-                      moveToPage(pageNumber)
-                    }
-                    aria-current={
-                      pageNumber === page
-                        ? "page"
-                        : undefined
-                    }
-                    className={`flex h-11 min-w-9 items-center justify-center rounded-xl px-1.5 text-sm font-bold transition sm:min-w-11 sm:px-2 ${
-                      pageNumber === page
-                        ? "bg-[#668b6c] text-white"
-                        : "border border-[#dce7d8] bg-white text-[#64866a] hover:bg-[#f1f6ed]"
-                    }`}
-                  >
-                    {pageNumber}
-                  </button>
-                )
-              )}
+              {pageNumbers.map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() =>
+                    moveToPage(pageNumber)
+                  }
+                  aria-current={
+                    pageNumber === page
+                      ? "page"
+                      : undefined
+                  }
+                  className={`flex h-11 min-w-9 items-center justify-center rounded-xl px-1.5 text-sm font-bold transition sm:min-w-11 sm:px-2 ${
+                    pageNumber === page
+                      ? "bg-[#668b6c] text-white"
+                      : "border border-[#dce7d8] bg-white text-[#64866a] hover:bg-[#f1f6ed]"
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              ))}
 
               <button
                 type="button"
                 onClick={() =>
                   moveToPage(page + 1)
                 }
-                disabled={
-                  page === totalPages
-                }
+                disabled={page === totalPages}
                 aria-label="다음 페이지"
                 className="flex h-11 w-10 items-center justify-center rounded-xl border border-[#dce7d8] bg-white text-[#64866a] disabled:cursor-not-allowed disabled:opacity-40 sm:w-11"
               >
