@@ -23,6 +23,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
+import { CommunityNotices } from "@/components/community-notices";
 
 type Category = "free" | "tips" | "question";
 type CategoryFilter = "all" | Category;
@@ -448,6 +449,8 @@ export default function CommunityPage() {
             글쓰기
           </Link>
         </div>
+
+        <CommunityNotices />
 
         {/* 검색 및 정렬 */}
         <div className="mt-5 flex flex-col gap-2 sm:mt-7 sm:flex-row sm:gap-3">
