@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
+import { PostNoticeControl } from "@/components/community-notices";
 import {
   ArrowLeft,
   CalendarDays,
@@ -1333,6 +1334,13 @@ export default function CommunityPostPage() {
                   <h1 className="font-hand mt-4 break-words text-[27px] leading-snug sm:mt-6 sm:text-3xl md:text-4xl">
                     {post.title}
                   </h1>
+
+                  <PostNoticeControl
+                    key={post.id}
+                    postId={post.id}
+                    isAdmin={isAdmin}
+                    disabled={saving}
+                  />
 
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 sm:mt-5 sm:gap-4">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-[#829482] sm:text-xs">
