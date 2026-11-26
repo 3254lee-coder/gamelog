@@ -37,7 +37,7 @@ type Post = {
   category: Category;
   title: string;
   content: string;
-  author_id: string;
+  author_id: string | null;
   image_paths: string[];
   view_count: number;
   created_at: string;
@@ -52,7 +52,7 @@ type BrowsePostRow = {
   category: string;
   title: string;
   content: string;
-  author_id: string;
+  author_id: string | null;
   image_paths: string[] | null;
   view_count: number | null;
   created_at: string;
@@ -672,7 +672,7 @@ export default function CommunityPage() {
             </div>
           ) : (
             <div className="divide-y divide-[#edf0e9]">
-              {posts.filter(post=>!blocked.includes(post.author_id)).map((post) => {
+              {posts.filter(post=>!post.author_id || !blocked.includes(post.author_id)).map((post) => {
                 const itemCategory =
                   getCategory(post.category);
 

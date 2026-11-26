@@ -37,7 +37,7 @@ type Category = "free" | "tips" | "question";
 
 type Post = {
   id: string;
-  author_id: string;
+  author_id: string | null;
   category: Category;
   title: string;
   content: string;
@@ -848,14 +848,11 @@ export default function CommunityPostPage() {
         return;
       }
 
-      const {
-        data,
-        error,
-      } = await supabase
-        .from("tortoise_posts")
-        .delete()
-        .eq("id", post.id)
-        .eq("author_id", post.author_id)
+      const deletion = supabase.from("tortoise_posts").delete().eq("id", post.id);
+      const scopedDeletion = post.author_id === null
+        ? deletion.is("author_id", null)
+        : deletion.eq("author_id", post.author_id);
+      const { data, error } = await scopedDeletion
         .select(
           "id, author_id, image_paths"
         )
@@ -957,7 +954,7 @@ export default function CommunityPostPage() {
     }
   }
 
-  if(post && blocked.includes(post.author_id)) return <main className="container-site py-12">차단한 회원의 게시글입니다.</main>;
+  if(post?.author_id && blocked.includes(post.author_id)) return <main className="container-site py-12">차단한 회원의 게시글입니다.</main>;
   const isAdmin = user?.id === ADMIN_UID;
 
   const isPostOwner =

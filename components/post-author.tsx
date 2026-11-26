@@ -20,7 +20,7 @@ export default function PostAuthor({
   showAdmin = true,
 }: {
   postId: string;
-  authorId?: string;
+  authorId?: string | null;
   nickname?: string;
   showAdmin?: boolean;
 }) {
@@ -29,7 +29,7 @@ export default function PostAuthor({
   useEffect(() => {
     setName("");
 
-    if (nickname !== undefined) return;
+    if (authorId === null || nickname !== undefined) return;
 
     const db = getSupabase();
 
@@ -63,9 +63,9 @@ export default function PostAuthor({
     return () => {
       active = false;
     };
-  }, [postId, nickname]);
+  }, [postId, nickname, authorId]);
 
-  const displayName =
+  const displayName = authorId === null ? "탈퇴한 회원" :
     nickname ||
     name ||
     (

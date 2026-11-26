@@ -81,13 +81,11 @@ export function SafetyActions({
       const { error } =
         action === "block"
           ? await db.from("lt_blocks").insert({ member_id: author })
-          : await db
-              .from("lt_reports")
-              .insert({
-                kind: action === "member" ? "member" : kind,
-                target: action === "member" ? author : id,
-                reason,
-              });
+          : await db.from("lt_reports").insert({
+              kind: action === "member" ? "member" : kind,
+              target: action === "member" ? author : id,
+              reason,
+            });
       setMessage(
         error
           ? error.code === "23505"
@@ -131,7 +129,9 @@ export function AccountSafety() {
       !db ||
       !password ||
       busy ||
-      !window.confirm("본인 확인 후 운영자에게 탈퇴 처리를 요청할까요?")
+      !window.confirm(
+        "계정, 성장 기록, 사진과 작성 내용이 삭제됩니다. 다른 회원의 답글이 연결된 자리는 익명으로 남습니다. 본인 확인 후 탈퇴를 요청할까요?",
+      )
     )
       return;
     setBusy(true);
@@ -152,11 +152,32 @@ export function AccountSafety() {
       const { error } = await db
         .from("lt_withdrawals")
         .insert({ owner_id: userId });
-      setMsg(
-        error && error.code !== "23505"
-          ? "요청하지 못했습니다. 다시 시도해 주세요."
-          : "탈퇴 요청이 접수되었습니다. 운영자가 확인 후 처리합니다.",
-      );
+      if (error && error.code !== "23505") {
+        setMsg("요청하지 못했습니다. 다시 시도해 주세요.");
+        return;
+      }
+      setMsg("탈퇴 요청이 접수되었습니다.");
+      if (auth.data.session) {
+        try {
+          const response = await fetch("/api/account/withdrawal", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${auth.data.session.access_token}`,
+            },
+          });
+          if (
+            response.status === 200 &&
+            (await response.json()).status === "complete"
+          ) {
+            await db.auth.signOut({ scope: "local" });
+            window.location.assign("/login?withdrawn=1");
+            return;
+          }
+        } catch {
+          // The verified request has already been saved.
+        }
+      }
+      setMsg("탈퇴 요청을 접수했습니다. 남은 처리는 운영자가 확인합니다.");
     } finally {
       setPassword("");
       setBusy(false);

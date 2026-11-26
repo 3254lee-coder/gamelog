@@ -19,7 +19,7 @@ import PostAuthor from "@/components/post-author";
 
 type Post = {
   id: string;
-  author_id: string;
+  author_id: string | null;
   category: string;
   title: string;
   created_at: string;
@@ -176,7 +176,7 @@ export default function HomeCommunity() {
       );
     }
 
-    items=items.filter(post=>!blocked.includes(post.author_id));
+    items=items.filter(post=>!post.author_id || !blocked.includes(post.author_id));
     if (!items.length) {
       return (
         <div className="py-10 text-center">
