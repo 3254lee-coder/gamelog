@@ -1,0 +1,27 @@
+name: Isolated Supabase withdrawal test
+on:
+  push:
+    branches: [dev/web-readiness]
+    paths:
+      - '.github/workflows/withdrawal-integration.yml'
+      - 'tests/supabase/**'
+      - 'supabase/migrations/**'
+      - 'lib/withdrawal-runner.mjs'
+permissions:
+  contents: read
+jobs:
+  withdrawal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: npm install --no-save --ignore-scripts
+      - run: bash tests/supabase/run.sh
