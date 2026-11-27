@@ -24,6 +24,15 @@ const post=ok(await A.client.from("tortoise_posts").insert({author_id:A.id,title
 const bPost=ok(await B.client.from("tortoise_posts").insert({author_id:B.id,title:"B original",content:"B post remains",image_paths:[B.id+"/keep.png"]}).select().single());
 const parent=ok(await A.client.from("tortoise_comments").insert({author_id:A.id,post_id:post.id,nickname:"회원 A",content:"parent"}).select().single());
 const reply=ok(await B.client.from("tortoise_comments").insert({author_id:B.id,post_id:post.id,parent_id:parent.id,nickname:"회원 B",content:"B reply"}).select().single());
+const automaticNotice=ok(await A.client.from("tortoise_notifications")
+  .select("id,comment_id").eq("recipient_id",A.id).eq("comment_id",reply.id));
+assert.ok(automaticNotice.length>0,"B's reply should notify A automatically");
+ok(await A.client.from("lt_blocks").insert({member_id:B.id}));
+const blockedNoticeFilter=await A.client.from("tortoise_notifications")
+  .select("id,comment:tortoise_comments!tortoise_notifications_comment_id_fkey!inner(author_id)")
+  .eq("recipient_id",A.id).not("comment.author_id","in",`(${B.id})`);
+assert.ok(!blockedNoticeFilter.error,blockedNoticeFilter.error?.message);
+assert.ok(!blockedNoticeFilter.data.some(row=>row.comment?.author_id===B.id));
 const turtle=ok(await admin.from("tortoises").insert({user_id:A.id,name:"A turtle"}).select().single());
 ok(await admin.from("tortoise_growth_records").insert({user_id:A.id,tortoise_id:turtle.id,measured_on:"2026-11-27",weight_g:250,memo:"A diary"}));
 const report=(target)=>B.client.from("lt_reports").insert({kind:"post",target,reason:"fixture"});
@@ -134,11 +143,41 @@ assert.ok((await admin.storage.from(gallery).download(C.id+"/untouched.png")).da
 assert.equal(ok(await admin.from("tortoise_posts").select("content").eq("id",cPost.id).single()).content,"C remains");
 console.log("PASS: direct administrator Auth deletion without a prepared request is blocked without data loss");
 
+assert.ok(ok(await A.client.auth.getUser()).user.id===A.id);
 ok(await admin.from("lt_test_hold").insert({owner_id:A.id}));
 const [prepared,race]=await Promise.all([admin.rpc("lt_prepare_withdrawal",{member:A.id}),upload(A,gallery,"race.png")]);ok(prepared);
 const late=await upload(A,gallery,"late.png");assert.ok(late.error);
 console.log("Concurrent upload:",race.error?"blocked":"committed before preparation");
 assert.ok(ok(await admin.from("lt_withdrawals").select("prepared_at").eq("owner_id",A.id).single()).prepared_at);
+const activeSession=ok(await A.client.auth.getUser()).user;
+assert.equal(activeSession.id,A.id);
+function assertWithdrawalWriteBlocked(result) {
+  assert.equal(result.error?.code,"P0001",result.error?.message);
+  assert.match(result.error?.message??"",/account withdrawal is in progress/i);
+}
+assertWithdrawalWriteBlocked(await A.client.from("tortoise_posts").insert({
+  author_id:A.id,title:"late post",content:"must be blocked"
+}));
+assertWithdrawalWriteBlocked(await A.client.from("tortoise_comments").insert({
+  author_id:A.id,post_id:bPost.id,nickname:"회원 A",content:"late comment"
+}));
+assertWithdrawalWriteBlocked(await A.client.from("tortoises").insert({
+  user_id:A.id,name:"late turtle"
+}));
+assertWithdrawalWriteBlocked(await A.client.from("tortoise_growth_records").insert({
+  user_id:A.id,tortoise_id:turtle.id,measured_on:"2026-11-27",weight_g:251
+}));
+assertWithdrawalWriteBlocked(await A.client.from("tortoise_post_likes").insert({
+  post_id:bPost.id,user_id:A.id
+}));
+assertWithdrawalWriteBlocked(await A.client.from("lt_reports").insert({
+  kind:"post",target:bPost.id,reason:"late report"
+}));
+assertWithdrawalWriteBlocked(await A.client.from("lt_blocks").insert({
+  member_id:B.id
+}));
+assertWithdrawalWriteBlocked(await A.client.from("lt_blocks").delete().eq("owner_id",A.id).eq("member_id",B.id));
+console.log("PASS: authenticated session remains valid during retry, but all guarded content and safety writes are rejected");
 const activeSession=ok(await A.client.auth.getUser()).user;
 assert.equal(activeSession.id,A.id);
 function assertWithdrawalWriteBlocked(result) {
