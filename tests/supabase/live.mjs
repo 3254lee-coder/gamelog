@@ -77,10 +77,10 @@ assert.deepEqual(ok(deniedEdit),[]);
 ok(await A.client.from("tortoise_posts").delete().eq("id",editTarget.id).select("id").single());
 assert.deepEqual(ok(await admin.from("tortoise_posts").select("id").eq("id",editTarget.id)),[]);
 const searchResult=ok(await A.client.rpc("browse_tortoise_posts",{
-  p_category:"all",p_query:"B original",p_sort:"newest",p_page:1,p_page_size:20,
+  p_category:"all",p_query:"A original",p_sort:"newest",p_page:1,p_page_size:20,
   p_recent_only:false,p_photos_only:false
 }));
-assert.ok(searchResult.some(row=>row.id===bPost.id));
+assert.ok(searchResult.some(row=>row.id===post.id));
 ok(await B.client.from("tortoise_post_likes").insert({post_id:post.id,user_id:B.id}));
 assert.equal(ok(await B.client.from("tortoise_post_likes").select("post_id").eq("post_id",post.id)).length,1);
 const popularity=ok(await A.client.rpc("browse_tortoise_posts",{
@@ -106,6 +106,29 @@ const pageTwo=ok(await A.client.rpc("browse_tortoise_posts",{
 assert.equal(pageOne.length,1);assert.equal(pageTwo.length,1);
 assert.notEqual(pageOne[0].id,pageTwo[0].id);
 assert.equal(pageOne[0].total_count,2);assert.equal(pageTwo[0].total_count,2);
+const anonymous=createClient(url,process.env.ANON_KEY,options);
+const anonymousBrowse=ok(await anonymous.rpc("browse_tortoise_posts",{
+  p_category:"all",p_query:"A original",p_sort:"newest",p_page:1,p_page_size:20,
+  p_recent_only:false,p_photos_only:false
+}));
+assert.ok(anonymousBrowse.some(row=>row.id===bPost.id),"public browsing remains unchanged");
+const hiddenPageTitle="blocked pagination fixture";
+const visiblePagePost=ok(await A.client.from("tortoise_posts").insert({
+  author_id:A.id,title:hiddenPageTitle+" visible",content:"visible row"
+}).select("id").single());
+ok(await B.client.from("tortoise_posts").insert({
+  author_id:B.id,title:hiddenPageTitle+" hidden",content:"blocked row"
+}));
+const visiblePage=ok(await A.client.rpc("browse_tortoise_posts",{
+  p_category:"all",p_query:hiddenPageTitle,p_sort:"newest",p_page:1,p_page_size:1,
+  p_recent_only:false,p_photos_only:false
+}));
+const hiddenPage=ok(await A.client.rpc("browse_tortoise_posts",{
+  p_category:"all",p_query:hiddenPageTitle,p_sort:"newest",p_page:2,p_page_size:1,
+  p_recent_only:false,p_photos_only:false
+}));
+assert.equal(visiblePage.length,1);assert.equal(visiblePage[0].id,visiblePagePost.id);
+assert.equal(visiblePage[0].total_count,1);assert.deepEqual(hiddenPage,[]);
 assert.ok(ok(await A.client.rpc("browse_tortoise_posts",{
   p_category:"all",p_query:"B original",p_sort:"newest",p_page:1,p_page_size:20,
   p_recent_only:false,p_photos_only:true
