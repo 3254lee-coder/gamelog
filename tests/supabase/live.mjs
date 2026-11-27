@@ -177,6 +177,7 @@ console.log("PASS: Next.js route rejects anonymous and unrelated sessions and co
 const deleted=await admin.auth.admin.getUserById(A.id);
 assert.ok(deleted.error && (deleted.error.status===404 || deleted.error.code==="user_not_found"));
 assert.equal(ok(await admin.auth.admin.getUserById(B.id)).user.id,B.id);
+ok(await moderationAdmin.from("lt_withdrawals").insert({owner_id:adminUid}));
 const adminWithdrawal=await requestWithdrawal(moderationAdmin,adminUid);
 assert.equal(adminWithdrawal.status,200);
 assert.equal((await adminWithdrawal.json()).status,"complete");
