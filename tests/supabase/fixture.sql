@@ -36,6 +36,7 @@ for each row execute function public.lt_test_fail_photo_delete();
 alter table public.tortoise_posts add column category text default 'free', add column created_at timestamptz default now();
 alter table public.tortoise_comments add column created_at timestamptz default now();
 alter table public.tortoise_notifications add column comment_id uuid, add column kind text, add column created_at timestamptz default now();
+alter table public.tortoise_notifications add constraint tortoise_notifications_comment_id_fkey foreign key(comment_id) references public.tortoise_comments on delete cascade;
 create table public.tortoise_post_likes(post_id uuid references public.tortoise_posts on delete cascade,user_id uuid references auth.users on delete cascade,created_at timestamptz default now(),primary key(post_id,user_id));
 grant select on public.tortoise_post_likes to authenticated;
 
