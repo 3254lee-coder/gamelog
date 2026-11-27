@@ -96,6 +96,15 @@ assert.equal(ok(await A.client.rpc("browse_tortoise_posts",{...sortArgs,p_sort:"
 assert.equal(ok(await A.client.rpc("browse_tortoise_posts",{...sortArgs,p_sort:"newest"}))[0].title,"정렬 회귀 최신 글");
 assert.equal(ok(await A.client.rpc("browse_tortoise_posts",{...sortArgs,p_sort:"views"}))[0].title,"정렬 회귀 최신 글");
 assert.deepEqual(ok(await A.client.rpc("browse_tortoise_posts",{...sortArgs,p_category:"question",p_sort:"newest"})).map(row=>row.title),["정렬 회귀 최신 글"]);
+const pageOne=ok(await A.client.rpc("browse_tortoise_posts",{
+  ...sortArgs,p_sort:"newest",p_page:1,p_page_size:1
+}));
+const pageTwo=ok(await A.client.rpc("browse_tortoise_posts",{
+  ...sortArgs,p_sort:"newest",p_page:2,p_page_size:1
+}));
+assert.equal(pageOne.length,1);assert.equal(pageTwo.length,1);
+assert.notEqual(pageOne[0].id,pageTwo[0].id);
+assert.equal(pageOne[0].total_count,2);assert.equal(pageTwo[0].total_count,2);
 assert.ok(ok(await A.client.rpc("browse_tortoise_posts",{
   p_category:"all",p_query:"B original",p_sort:"newest",p_page:1,p_page_size:20,
   p_recent_only:false,p_photos_only:true
