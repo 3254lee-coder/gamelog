@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { getSupabase } from "@/lib/supabase";
+import { useSafety } from "@/components/member-safety";
 
 type Notification = {
   id: string;
@@ -60,6 +61,7 @@ export default function Notifications({
   userId: string;
 }) {
   const router = useRouter();
+  const { blocked } = useSafety();
   const pathname = usePathname();
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -76,25 +78,27 @@ export default function Notifications({
 
     if (!db) return;
 
-    const [list, count] = await Promise.all([
-      db
-        .from(TABLE)
-        .select(
-          "id, post_id, comment_id, kind, post_title, created_at, read_at"
-        )
-        .eq("recipient_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(30),
-
-      db
-        .from(TABLE)
-        .select("id", {
-          count: "exact",
-          head: true,
-        })
-        .eq("recipient_id", userId)
-        .is("read_at", null),
-    ]);
+    const validBlocked = blocked.filter((id) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    );
+    const blockedFilter = `(${validBlocked.join(",")})`;
+    const relation = "comment:tortoise_comments!tortoise_notifications_comment_id_fkey!inner(author_id)";
+    let listQuery = db
+      .from(TABLE)
+      .select(`id, post_id, comment_id, kind, post_title, created_at, read_at, ${relation}`)
+      .eq("recipient_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    let countQuery = db
+      .from(TABLE)
+      .select(`id, ${relation}`, { count: "exact", head: true })
+      .eq("recipient_id", userId)
+      .is("read_at", null);
+    if (validBlocked.length) {
+      listQuery = listQuery.not("comment.author_id", "in", blockedFilter);
+      countQuery = countQuery.not("comment.author_id", "in", blockedFilter);
+    }
+    const [list, count] = await Promise.all([listQuery, countQuery]);
 
     if (list.error || count.error) {
       setError("알림을 불러오지 못했습니다.");
@@ -105,7 +109,7 @@ export default function Notifications({
     }
 
     setLoading(false);
-  }, [userId]);
+  }, [userId, blocked]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
