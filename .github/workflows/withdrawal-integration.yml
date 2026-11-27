@@ -7,6 +7,9 @@ on:
       - 'tests/supabase/**'
       - 'supabase/migrations/**'
       - 'lib/withdrawal-runner.mjs'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
 permissions:
   contents: read
 jobs:
@@ -23,5 +26,9 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 3.4.0
-      - run: npm install --no-save --ignore-scripts
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - run: pnpm install --frozen-lockfile --config.node-linker=hoisted
+      - run: pnpm exec eslint . --max-warnings 0 && pnpm build && pnpm exec tsc --noEmit
       - run: bash tests/supabase/run.sh

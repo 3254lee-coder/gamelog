@@ -381,6 +381,7 @@ export default function CommunityPage() {
     totalCount
   );
 
+  const visiblePosts = posts.filter((post) => !post.author_id || !blocked.includes(post.author_id));
   const activeFilters =
     category !== "all" ||
     query.trim().length > 0 ||
@@ -643,7 +644,7 @@ export default function CommunityPage() {
             >
               {error}
             </div>
-          ) : posts.length === 0 ? (
+          ) : visiblePosts.length === 0 ? (
             <div className="px-5 py-14 text-center">
               <BookOpen
                 size={35}
@@ -651,13 +652,13 @@ export default function CommunityPage() {
               />
 
               <h3 className="font-hand mt-5 text-2xl">
-                게시글이 없어요
+                {posts.length ? "차단 설정으로 이 페이지의 글이 숨겨졌어요" : "게시글이 없어요"}
               </h3>
 
               <p className="mt-3 text-sm leading-7 text-[#849684]">
-                검색 조건에 맞는 게시글이 없거나
+                {posts.length ? "다른 페이지를 보거나 마이페이지에서 차단 설정을 확인해 주세요." : <>검색 조건에 맞는 게시글이 없거나
                 <br />
-                아직 작성된 글이 없습니다.
+                아직 작성된 글이 없습니다.</>}
               </p>
 
               {activeFilters && (
@@ -672,7 +673,7 @@ export default function CommunityPage() {
             </div>
           ) : (
             <div className="divide-y divide-[#edf0e9]">
-              {posts.filter(post=>!post.author_id || !blocked.includes(post.author_id)).map((post) => {
+              {visiblePosts.map((post) => {
                 const itemCategory =
                   getCategory(post.category);
 
