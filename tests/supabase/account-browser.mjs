@@ -51,6 +51,13 @@ try {
   await mobile.getByRole("heading",{name:/성장/}).first().waitFor();
   assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
 
+
+  for (const route of ["/guide","/species"]) {
+    await mobile.goto(base+route);
+    await mobile.locator("h1").first().waitFor();
+    assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  }
+
   await mobile.goto(base+"/admin");
   await mobile.getByText("접근 권한이 없습니다").waitFor();
   const recovery=await admin.auth.admin.generateLink({type:"recovery",email});
