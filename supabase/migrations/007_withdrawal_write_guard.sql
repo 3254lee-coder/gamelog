@@ -16,7 +16,6 @@ begin
   case tg_table_name
     when 'tortoise_posts' then member := coalesce(new.author_id, old.author_id);
     when 'tortoise_comments' then member := coalesce(new.author_id, old.author_id);
-    when 'tortoise_tortoises' then member := coalesce(new.user_id, old.user_id);
     when 'tortoises' then member := coalesce(new.user_id, old.user_id);
     when 'tortoise_growth_records' then member := coalesce(new.user_id, old.user_id);
     when 'tortoise_post_likes' then member := coalesce(new.user_id, old.user_id);
