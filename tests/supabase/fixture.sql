@@ -35,7 +35,15 @@ for each row execute function public.lt_test_fail_photo_delete();
 -- My-page and notification projections used by browser smoke tests.
 alter table public.tortoise_posts add column category text default 'free', add column created_at timestamptz default now();
 alter table public.tortoise_comments add column created_at timestamptz default now();
-alter table public.tortoise_notifications add column comment_id uuid not null, add column kind text, add column created_at timestamptz default now();
+alter table public.tortoise_notifications
+  add column comment_id uuid not null,
+  add column kind text not null,
+  add column created_at timestamptz not null default now();
+alter table public.tortoise_notifications
+  add constraint tortoise_notifications_comment_id_fkey
+    foreign key(comment_id) references public.tortoise_comments on delete cascade,
+  add constraint tortoise_notifications_recipient_id_comment_id_key
+    unique(recipient_id,comment_id);
 alter table public.tortoise_notifications add constraint tortoise_notifications_comment_id_fkey foreign key(comment_id) references public.tortoise_comments on delete cascade;
 create table public.tortoise_post_likes(post_id uuid references public.tortoise_posts on delete cascade,user_id uuid references auth.users on delete cascade,created_at timestamptz default now(),primary key(post_id,user_id));
 grant select on public.tortoise_post_likes to authenticated;
@@ -214,3 +222,44 @@ $function$;
 create trigger validate_tortoise_reply_trigger
 before insert or update on public.tortoise_comments
 for each row execute function public.validate_tortoise_reply();
+
+-- Production AFTER INSERT notification trigger. Keep this fixture aligned with
+-- the operational definition so tests exercise the real automatic flow.
+create or replace function public.create_tortoise_notification()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $notification$
+declare
+  post_owner uuid;
+  parent_owner uuid;
+  current_title text;
+begin
+  if new.author_id is null then return new; end if;
+
+  select author_id,title into post_owner,current_title
+  from public.tortoise_posts where id=new.post_id;
+
+  if new.parent_id is not null then
+    select author_id into parent_owner
+    from public.tortoise_comments where id=new.parent_id;
+    if parent_owner is not null and parent_owner<>new.author_id then
+      insert into public.tortoise_notifications(recipient_id,post_id,comment_id,kind,post_title)
+      values(parent_owner,new.post_id,new.id,'reply',current_title)
+      on conflict(recipient_id,comment_id) do nothing;
+    end if;
+  end if;
+
+  if post_owner is not null and post_owner<>new.author_id then
+    insert into public.tortoise_notifications(recipient_id,post_id,comment_id,kind,post_title)
+    values(post_owner,new.post_id,new.id,'comment',current_title)
+    on conflict(recipient_id,comment_id) do nothing;
+  end if;
+  return new;
+end;
+$notification$;
+
+create trigger create_tortoise_notification_trigger
+after insert on public.tortoise_comments
+for each row execute function public.create_tortoise_notification();
