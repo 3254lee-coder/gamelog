@@ -47,6 +47,26 @@ try {
   await mobile.getByRole("button",{name:"답글 등록"}).click();
   await mobile.getByText("모바일 답글 회귀 검증",{exact:true}).waitFor();
   assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+
+  await mobile.goto(base+"/community/write");
+  await mobile.getByPlaceholder("제목을 입력해 주세요").fill("모바일 게시글 회귀 검증");
+  await mobile.getByPlaceholder("거북이와 함께한 이야기를 작성해 주세요.").fill("게시글 작성, 사진 업로드, 수정, 삭제를 확인합니다.");
+  await mobile.getByLabel("게시글 사진 선택").setInputFiles({
+    name:"regression.png",mimeType:"image/png",
+    buffer:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j1ioAAAAASUVORK5CYII=","base64")
+  });
+  await mobile.getByRole("button",{name:"게시글 등록"}).click();
+  await mobile.getByRole("heading",{name:"모바일 게시글 회귀 검증",exact:true}).waitFor();
+  await mobile.getByRole("button",{name:"수정",exact:true}).click();
+  await mobile.locator("#edit-title").fill("모바일 게시글 수정 회귀");
+  await mobile.locator("#edit-content").fill("수정된 본문을 확인합니다.");
+  await mobile.getByRole("button",{name:"수정 완료"}).click();
+  await mobile.getByRole("heading",{name:"모바일 게시글 수정 회귀",exact:true}).waitFor();
+  mobile.once("dialog",dialog=>dialog.accept());
+  await mobile.getByRole("button",{name:"삭제",exact:true}).click();
+  await mobile.getByRole("heading",{name:"게시글을 찾을 수 없어요"}).waitFor();
+  assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+
   await mobile.goto(base+"/growth");
   await mobile.getByRole("heading",{name:"우리 거북이 성장일기"}).waitFor();
   await mobile.getByRole("button",{name:"거북이 등록"}).click();
