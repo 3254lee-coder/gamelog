@@ -52,7 +52,8 @@ console.log("PASS: real Storage delete failure preserves object and account");
 assert.equal(ok(await admin.auth.admin.getUserById(A.id)).user.id,A.id);
 assert.equal(await processVerifiedWithdrawal(admin,A.id,1),false);
 await assert.rejects(processVerifiedWithdrawal(admin,A.id));
-assert.equal(ok(await admin.from("tortoise_posts").select("title").eq("id",post.id).single()).title,"A original");
+assert.equal(ok(await admin.from("tortoise_posts").select("title").eq("id",post.id).single()).title,"탈퇴한 회원의 글");
+assert.equal(ok(await admin.from("tortoise_comments").select("content").eq("id",reply.id).single()).content,"B reply");
 ok(await admin.from("lt_test_hold").delete().eq("owner_id",A.id));
 const endpoint="http://127.0.0.1:3218/api/account/withdrawal";
 async function requestWithdrawal(client) {
