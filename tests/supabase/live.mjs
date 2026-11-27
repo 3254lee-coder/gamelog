@@ -38,6 +38,10 @@ assert.deepEqual(ok(await A.client.from("lt_reports").select("id,status").eq("ta
 const queuedReport=ok(await moderationAdmin.from("lt_reports").select("id,status").eq("target",post.id).single());
 assert.equal(queuedReport.status,"pending");
 assert.equal(ok(await moderationAdmin.from("lt_reports").update({status:"resolved"}).eq("id",queuedReport.id).select("status").single()).status,"resolved");
+
+const blockedAdminAccountDelete=await admin.auth.admin.deleteUser(adminUid);
+assert.ok(blockedAdminAccountDelete.error);
+assert.equal(ok(await admin.auth.admin.getUserById(adminUid)).user.id,adminUid);
 console.log("PASS: isolated administrator can review and resolve reports; members cannot read the moderation queue");
 
 assert.deepEqual(ok(await B.client.from("lt_reports").select("id,status")),[]);
@@ -156,10 +160,10 @@ assert.equal(ok(await admin.from("tortoise_posts").select("title").eq("id",post.
 assert.equal(ok(await admin.from("tortoise_comments").select("content").eq("id",reply.id).single()).content,"B reply");
 ok(await admin.from("lt_test_hold").delete().eq("owner_id",A.id));
 const endpoint="http://127.0.0.1:3218/api/account/withdrawal";
-async function requestWithdrawal(client) {
+async function requestWithdrawal(client,memberId=A.id) {
   const headers={"Content-Type":"application/json"};
   if(client)headers.Authorization="Bearer "+ok(await client.auth.getSession()).session.access_token;
-  return fetch(endpoint,{method:"POST",headers,body:JSON.stringify({member:A.id})});
+  return fetch(endpoint,{method:"POST",headers,body:JSON.stringify({member:memberId})});
 }
 assert.equal((await requestWithdrawal()).status,401);
 const wrongMember=await requestWithdrawal(B.client);
@@ -173,6 +177,12 @@ console.log("PASS: Next.js route rejects anonymous and unrelated sessions and co
 const deleted=await admin.auth.admin.getUserById(A.id);
 assert.ok(deleted.error && (deleted.error.status===404 || deleted.error.code==="user_not_found"));
 assert.equal(ok(await admin.auth.admin.getUserById(B.id)).user.id,B.id);
+const adminWithdrawal=await requestWithdrawal(moderationAdmin,adminUid);
+assert.equal(adminWithdrawal.status,200);
+assert.equal((await adminWithdrawal.json()).status,"complete");
+const deletedAdminAccount=await admin.auth.admin.getUserById(adminUid);
+assert.ok(deletedAdminAccount.error && (deletedAdminAccount.error.status===404 || deletedAdminAccount.error.code==="user_not_found"));
+
 const remaining=ok(await B.client.from("tortoise_posts").select().eq("id",post.id).single());
 const bRemaining=ok(await B.client.from("tortoise_posts").select().eq("id",bPost.id).single());assert.equal(bRemaining.author_id,B.id);assert.equal(bRemaining.title,"B original");assert.equal(bRemaining.content,"B post remains");
 assert.equal(remaining.author_id,null);assert.equal(remaining.title,"탈퇴한 회원의 글");assert.equal(remaining.content,"작성자가 탈퇴하여 내용이 삭제되었습니다.");assert.deepEqual(remaining.image_paths,[]);
