@@ -43,6 +43,7 @@ ok(await admin.from("lt_test_hold").insert({owner_id:A.id}));
 const [claim,race]=await Promise.all([admin.rpc("lt_withdrawal_photos",{member:A.id}),upload(A,gallery,"race.png")]);ok(claim);
 const late=await upload(A,gallery,"late.png");assert.ok(late.error);
 console.log("Concurrent upload:",race.error?"blocked":"committed before claim");
+ok(await admin.rpc("lt_prepare_withdrawal",{member:A.id}));
 assert.ok((await admin.auth.admin.deleteUser(A.id)).error);
 ok(await admin.from("lt_test_storage_hold").insert({owner_id:A.id}));
 await assert.rejects(processVerifiedWithdrawal(admin,A.id));
