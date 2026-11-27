@@ -103,6 +103,7 @@ returns table(
 )
 language sql
 stable
+security definer
 set search_path = ''
 as $
   with filtered as (
