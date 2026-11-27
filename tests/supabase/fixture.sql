@@ -15,3 +15,19 @@ create policy own_comments on public.tortoise_comments for insert to authenticat
 grant select,insert on public.tortoise_posts,public.tortoise_comments to authenticated;
 grant all on all tables in schema public to service_role;
 create policy fixture_upload on storage.objects for insert to authenticated with check (bucket_id in ('tortoise-growth-photos','tortoise-post-images') and (storage.foldername(name))[1]=auth.uid()::text);
+
+-- Failure injection, local fixture only. Exercise Storage's real DELETE endpoint.
+create table public.lt_test_storage_hold(owner_id uuid primary key);
+revoke all on public.lt_test_storage_hold from public, anon, authenticated;
+grant all on public.lt_test_storage_hold to service_role;
+create function public.lt_test_fail_photo_delete() returns trigger
+language plpgsql security definer set search_path='' as $$
+begin
+  if exists(select from public.lt_test_storage_hold where owner_id::text=old.owner_id) then
+    raise exception 'fixture: storage unavailable';
+  end if;
+  return old;
+end;
+$$;
+create trigger lt_test_fail_photo_delete before delete on storage.objects
+for each row execute function public.lt_test_fail_photo_delete();
