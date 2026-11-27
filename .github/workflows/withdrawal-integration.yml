@@ -31,6 +31,7 @@ jobs:
         with:
           version: 11.25.0
       - run: pnpm install --frozen-lockfile --config.node-linker=hoisted
+      - run: pnpm audit
       - run: pnpm exec eslint . --max-warnings 0
       - run: npm install --prefix "$RUNNER_TEMP/lt-browser" --ignore-scripts --no-audit playwright-core@1.57.0
       - run: bash tests/supabase/run.sh
