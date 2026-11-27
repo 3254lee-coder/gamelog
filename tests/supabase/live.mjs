@@ -139,6 +139,35 @@ const [prepared,race]=await Promise.all([admin.rpc("lt_prepare_withdrawal",{memb
 const late=await upload(A,gallery,"late.png");assert.ok(late.error);
 console.log("Concurrent upload:",race.error?"blocked":"committed before preparation");
 assert.ok(ok(await admin.from("lt_withdrawals").select("prepared_at").eq("owner_id",A.id).single()).prepared_at);
+const activeSession=ok(await A.client.auth.getUser()).user;
+assert.equal(activeSession.id,A.id);
+function assertWithdrawalWriteBlocked(result) {
+  assert.equal(result.error?.code,"P0001",result.error?.message);
+  assert.match(result.error?.message??"",/account withdrawal is in progress/i);
+}
+assertWithdrawalWriteBlocked(await A.client.from("tortoise_posts").insert({
+  author_id:A.id,title:"late post",content:"must be blocked"
+}));
+assertWithdrawalWriteBlocked(await A.client.from("tortoise_comments").insert({
+  author_id:A.id,post_id:bPost.id,nickname:"회원 A",content:"late comment"
+}));
+assertWithdrawalWriteBlocked(await A.client.from("tortoises").insert({
+  user_id:A.id,name:"late turtle"
+}));
+assertWithdrawalWriteBlocked(await A.client.from("tortoise_growth_records").insert({
+  user_id:A.id,tortoise_id:turtle.id,measured_on:"2026-11-27",weight_g:251
+}));
+assertWithdrawalWriteBlocked(await A.client.from("tortoise_post_likes").insert({
+  post_id:bPost.id,user_id:A.id
+}));
+assertWithdrawalWriteBlocked(await A.client.from("lt_reports").insert({
+  kind:"post",target:bPost.id,reason:"late report"
+}));
+assertWithdrawalWriteBlocked(await A.client.from("lt_blocks").insert({
+  member_id:B.id
+}));
+assertWithdrawalWriteBlocked(await A.client.from("lt_blocks").delete().eq("owner_id",A.id).eq("member_id",B.id));
+console.log("PASS: authenticated session remains valid during retry, but all guarded content and safety writes are rejected");
 const preparedPost=ok(await admin.from("tortoise_posts").select().eq("id",post.id).single());
 assert.equal(preparedPost.author_id,null);assert.equal(preparedPost.title,"탈퇴한 회원의 글");assert.equal(preparedPost.content,"작성자가 탈퇴하여 내용이 삭제되었습니다.");assert.deepEqual(preparedPost.image_paths,[]);
 const preparedComments=ok(await admin.from("tortoise_comments").select().eq("post_id",post.id));
