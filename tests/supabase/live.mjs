@@ -23,7 +23,7 @@ ok(await upload(A,gallery,"post.png"));ok(await upload(A,diary,"growth.png"));ok
 const post=ok(await A.client.from("tortoise_posts").insert({author_id:A.id,title:"A original",content:"A private text",image_paths:[A.id+"/post.png"]}).select().single());
 const bPost=ok(await B.client.from("tortoise_posts").insert({author_id:B.id,title:"B original",content:"B post remains",image_paths:[B.id+"/keep.png"]}).select().single());
 const parent=ok(await A.client.from("tortoise_comments").insert({author_id:A.id,post_id:post.id,nickname:"회원 A",content:"parent"}).select().single());
-const reply=ok(await B.client.from("tortoise_comments").insert({author_id:B.id,post_id:post.id,parent_id:parent.id,nickname:"B",content:"B reply"}).select().single());
+const reply=ok(await B.client.from("tortoise_comments").insert({author_id:B.id,post_id:post.id,parent_id:parent.id,nickname:"회원 B",content:"B reply"}).select().single());
 const turtle=ok(await admin.from("tortoises").insert({user_id:A.id,name:"A turtle"}).select().single());
 ok(await admin.from("tortoise_growth_records").insert({user_id:A.id,tortoise_id:turtle.id,measured_on:"2026-11-27",weight_g:250,memo:"A diary"}));
 const report=(target)=>B.client.from("lt_reports").insert({kind:"post",target,reason:"fixture"});
