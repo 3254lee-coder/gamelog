@@ -27,6 +27,30 @@ try {
   await mobile.reload();
   await mobile.getByRole("heading",{name:"변경검증",exact:true}).waitFor();
   assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+
+  await mobile.goto(base+"/community");
+  await mobile.getByRole("heading",{name:"우리들의 이야기"}).waitFor();
+  await mobile.getByLabel("게시글 정렬").selectOption("oldest");
+  await mobile.getByLabel("게시글 검색").fill("B original");
+  await mobile.getByText("검색 결과 1개").waitFor();
+  await mobile.getByRole("link",{name:/B original/}).first().click();
+  await mobile.getByRole("heading",{name:"B original",exact:true}).waitFor();
+  const likeButton=mobile.getByRole("button",{name:/^좋아요 [0-9,]+$/});
+  await likeButton.click();
+  await mobile.getByRole("button",{name:/^좋아요 취소/}).waitFor();
+  await mobile.getByRole("button",{name:/^좋아요 취소/}).click();
+  await mobile.getByPlaceholder("따뜻한 댓글을 남겨주세요.").fill("모바일 댓글 회귀 검증");
+  await mobile.getByRole("button",{name:"댓글 등록"}).click();
+  await mobile.getByText("모바일 댓글 회귀 검증",{exact:true}).waitFor();
+  await mobile.getByRole("button",{name:"답글 달기"}).click();
+  await mobile.getByPlaceholder("따뜻한 답글을 남겨주세요.").fill("모바일 답글 회귀 검증");
+  await mobile.getByRole("button",{name:"답글 등록"}).click();
+  await mobile.getByText("모바일 답글 회귀 검증",{exact:true}).waitFor();
+  assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await mobile.goto(base+"/growth");
+  await mobile.getByRole("heading",{name:/성장/}).first().waitFor();
+  assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+
   await mobile.goto(base+"/admin");
   await mobile.getByText("접근 권한이 없습니다").waitFor();
   const recovery=await admin.auth.admin.generateLink({type:"recovery",email});
