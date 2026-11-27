@@ -25,7 +25,7 @@ const bPost=ok(await B.client.from("tortoise_posts").insert({author_id:B.id,titl
 const parent=ok(await A.client.from("tortoise_comments").insert({author_id:A.id,post_id:post.id,nickname:"회원 A",content:"parent"}).select().single());
 const reply=ok(await B.client.from("tortoise_comments").insert({author_id:B.id,post_id:post.id,parent_id:parent.id,nickname:"B",content:"B reply"}).select().single());
 const turtle=ok(await admin.from("tortoises").insert({user_id:A.id,name:"A turtle"}).select().single());
-ok(await admin.from("tortoise_growth_records").insert({user_id:A.id,tortoise_id:turtle.id,memo:"A diary"}));
+ok(await admin.from("tortoise_growth_records").insert({user_id:A.id,tortoise_id:turtle.id,measured_on:"2026-11-27",weight_g:250,memo:"A diary"}));
 const report=(target)=>B.client.from("lt_reports").insert({kind:"post",target,reason:"fixture"});
 ok(await report(post.id));assert.equal((await report(post.id)).error?.code,"23505");
 assert.deepEqual(ok(await B.client.from("lt_reports").select("id,status")),[]);
@@ -56,7 +56,7 @@ const searchResult=ok(await A.client.rpc("browse_tortoise_posts",{
 }));
 assert.ok(searchResult.some(row=>row.id===bPost.id));
 ok(await B.client.from("tortoise_post_likes").insert({post_id:post.id,user_id:B.id}));
-assert.equal(ok(await B.client.from("tortoise_post_likes").select("post_id",{count:"exact",head:true}).eq("post_id",post.id)).length,0);
+assert.equal(ok(await B.client.from("tortoise_post_likes").select("post_id").eq("post_id",post.id)).length,1);
 const popularity=ok(await A.client.rpc("browse_tortoise_posts",{
   p_category:"all",p_query:"A original",p_sort:"popular",p_page:1,p_page_size:20,
   p_recent_only:false,p_photos_only:false
@@ -84,7 +84,7 @@ ok(await A.client.from("tortoise_growth_records").update({memo:"성장 기록 �
   .eq("id",featureGrowth.id).eq("user_id",A.id).select("id").single());
 ok(await A.client.from("tortoise_growth_records").delete().eq("id",featureGrowth.id).eq("user_id",A.id).select("id").single());
 ok(await A.client.from("tortoises").delete().eq("id",featureTurtle.id).eq("user_id",A.id).select("id").single());
-ok(await A.client.storage.from(diary).remove(["feature-growth.png"]));
+ok(await A.client.storage.from(diary).remove([A.id+"/feature-growth.png"]));
 console.log("PASS: post edit/delete ownership, like/unlike, browse search/popularity, notification read_at isolation and growth/photo CRUD");
 
 const submit=()=>A.client.from("lt_withdrawals").insert({owner_id:A.id});
