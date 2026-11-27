@@ -162,3 +162,54 @@ begin
 end;
 $$;
 grant execute on function public.increment_tortoise_post_view(uuid) to anon,authenticated;
+
+
+-- Exact production validate_tortoise_reply function definition supplied by the
+-- user from a read-only production catalog query. Runs in disposable Supabase only.
+create or replace function public.validate_tortoise_reply()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+declare
+  parent_post uuid;
+  parent_parent uuid;
+begin
+  if tg_op = 'UPDATE' then
+    if new.parent_id is distinct from old.parent_id
+       or new.post_id is distinct from old.post_id then
+      raise exception '댓글의 연결 관계는 변경할 수 없습니다.';
+    end if;
+
+    return new;
+  end if;
+
+  if new.parent_id is null then
+    return new;
+  end if;
+
+  select post_id, parent_id
+  into parent_post, parent_parent
+  from public.tortoise_comments
+  where id = new.parent_id;
+
+  if not found then
+    raise exception '원댓글이 존재하지 않습니다.';
+  end if;
+
+  if parent_post is distinct from new.post_id then
+    raise exception '같은 게시글에만 답글을 작성할 수 있습니다.';
+  end if;
+
+  if parent_parent is not null then
+    raise exception '대댓글은 1단계까지만 작성할 수 있습니다.';
+  end if;
+
+  return new;
+end;
+$function$;
+
+create trigger validate_tortoise_reply_trigger
+before insert or update on public.tortoise_comments
+for each row execute function public.validate_tortoise_reply();
