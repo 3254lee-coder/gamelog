@@ -28,6 +28,18 @@ const turtle=ok(await admin.from("tortoises").insert({user_id:A.id,name:"A turtl
 ok(await admin.from("tortoise_growth_records").insert({user_id:A.id,tortoise_id:turtle.id,measured_on:"2026-11-27",weight_g:250,memo:"A diary"}));
 const report=(target)=>B.client.from("lt_reports").insert({kind:"post",target,reason:"fixture"});
 ok(await report(post.id));assert.equal((await report(post.id)).error?.code,"23505");
+const adminUid="5226f8c2-84ca-4189-b2a1-3a569bd3205c";
+const moderationAdmin=createClient(url,process.env.ANON_KEY,options);
+const adminEmail="isolated-admin-"+randomUUID()+"@example.test";
+const adminPassword=randomUUID()+"Aa!";
+ok(await admin.auth.admin.createUser({id:adminUid,email:adminEmail,password:adminPassword,email_confirm:true}));
+ok(await moderationAdmin.auth.signInWithPassword({email:adminEmail,password:adminPassword}));
+assert.deepEqual(ok(await A.client.from("lt_reports").select("id,status").eq("target",post.id)),[]);
+const queuedReport=ok(await moderationAdmin.from("lt_reports").select("id,status").eq("target",post.id).single());
+assert.equal(queuedReport.status,"pending");
+assert.equal(ok(await moderationAdmin.from("lt_reports").update({status:"resolved"}).eq("id",queuedReport.id).select("status").single()).status,"resolved");
+console.log("PASS: isolated administrator can review and resolve reports; members cannot read the moderation queue");
+
 assert.deepEqual(ok(await B.client.from("lt_reports").select("id,status")),[]);
 assert.ok((await B.client.from("lt_reports").select("reporter")).error);
 ok(await B.client.from("lt_blocks").insert({member_id:A.id}));
