@@ -290,6 +290,7 @@ export default function CommunityPage() {
     page,
     recentOnly,
     photosOnly,
+    blocked,
   ]);
 
   function updateCategory(value: CategoryFilter) {
