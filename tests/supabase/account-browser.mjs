@@ -48,7 +48,19 @@ try {
   await mobile.getByText("모바일 답글 회귀 검증",{exact:true}).waitFor();
   assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await mobile.goto(base+"/growth");
-  await mobile.getByRole("heading",{name:/성장/}).first().waitFor();
+  await mobile.getByRole("heading",{name:"우리 거북이 성장일기"}).waitFor();
+  await mobile.getByRole("button",{name:"거북이 등록"}).click();
+  await mobile.getByPlaceholder("예: 꼬북이").fill("모바일 검증 거북이");
+  await mobile.getByPlaceholder("예: 헤르만 육지거북").fill("테스트 종");
+  await mobile.getByRole("button",{name:"거북이 정보 저장"}).click();
+  await mobile.getByRole("heading",{name:"모바일 검증 거북이"}).waitFor();
+  await mobile.getByRole("button",{name:"기록 추가"}).click();
+  await mobile.locator('input[type="date"]').fill("2026-11-27");
+  await mobile.getByPlaceholder("예: 250").fill("250");
+  await mobile.getByPlaceholder("예: 10.5").fill("10.5");
+  await mobile.getByPlaceholder("오늘의 식사, 활동, 특이사항").fill("모바일 성장 기록 검증");
+  await mobile.getByRole("button",{name:"기록 저장"}).click();
+  await mobile.getByText("모바일 성장 기록 검증",{exact:true}).waitFor();
   assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
 
 
