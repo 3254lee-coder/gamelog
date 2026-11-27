@@ -346,8 +346,16 @@ export default function CommunityComments({
   }
 
   const rootComments = comments.filter(
-    (comment) => !comment.parent_id
+    (comment) =>
+      !comment.parent_id &&
+      (!comment.author_id || !blocked.includes(comment.author_id))
   );
+  const visibleRootIds = new Set(rootComments.map((comment) => comment.id));
+  const visibleCommentCount = comments.filter(
+    (comment) =>
+      (!comment.author_id || !blocked.includes(comment.author_id)) &&
+      (!comment.parent_id || visibleRootIds.has(comment.parent_id))
+  ).length;
 
   function renderComment(
     comment: Comment,
@@ -502,7 +510,7 @@ export default function CommunityComments({
         />
 
         <h2 className="font-hand text-2xl">
-          댓글 {comments.length}
+          댓글 {visibleCommentCount}
         </h2>
       </div>
 
@@ -528,7 +536,8 @@ export default function CommunityComments({
           rootComments.map((comment) => {
             const replies = comments.filter(
               (item) =>
-                item.parent_id === comment.id
+                item.parent_id === comment.id &&
+                (!item.author_id || !blocked.includes(item.author_id))
             );
 
             return (
