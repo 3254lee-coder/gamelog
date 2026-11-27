@@ -7,10 +7,21 @@ create function public.lt_block_withdrawal_writes() returns trigger
 language plpgsql security definer set search_path = '' as $$
 declare
   member uuid;
+  requester uuid := auth.uid();
 begin
   if auth.role() = 'service_role' then
     if tg_op = 'DELETE' then return old; end if;
     return new;
+  end if;
+
+  if requester is not null then
+    perform pg_advisory_xact_lock(hashtextextended(requester::text, 0));
+    if exists (
+      select from public.lt_withdrawals
+      where owner_id = requester and started_at is not null
+    ) then
+      raise exception 'account withdrawal is in progress';
+    end if;
   end if;
 
   case tg_table_name
