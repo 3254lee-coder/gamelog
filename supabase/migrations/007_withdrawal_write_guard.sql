@@ -75,4 +75,81 @@ begin
 end;
 $$;
 
+
+-- Apply each member's block list before counting and pagination. Anonymous
+-- browsing remains unchanged, while blocked posts do not distort result pages.
+create or replace function public.browse_tortoise_posts(
+  p_category text default 'all',
+  p_query text default '',
+  p_sort text default 'newest',
+  p_page integer default 1,
+  p_page_size integer default 10,
+  p_recent_only boolean default false,
+  p_photos_only boolean default false
+)
+returns table(
+  id uuid,
+  category text,
+  title text,
+  content text,
+  author_id uuid,
+  image_paths text[],
+  view_count bigint,
+  created_at timestamptz,
+  updated_at timestamptz,
+  like_count bigint,
+  comment_count bigint,
+  total_count bigint
+)
+language sql
+stable
+set search_path = ''
+as $
+  with filtered as (
+    select
+      p.id,
+      p.category::text as category,
+      p.title::text as title,
+      p.content::text as content,
+      p.author_id,
+      coalesce(p.image_paths, '{}'::text[]) as image_paths,
+      coalesce(p.view_count, 0)::bigint as view_count,
+      p.created_at,
+      p.updated_at,
+      (select count(*) from public.tortoise_post_likes l where l.post_id=p.id)::bigint as like_count,
+      (select count(*) from public.tortoise_comments c where c.post_id=p.id)::bigint as comment_count,
+      count(*) over()::bigint as total_count
+    from public.tortoise_posts p
+    where
+      (coalesce(p_category, 'all')='all' or p.category::text=p_category)
+      and (
+        nullif(trim(coalesce(p_query, '')), '') is null
+        or position(lower(trim(p_query)) in lower(coalesce(p.title,'') || ' ' || coalesce(p.content,''))) > 0
+      )
+      and (not coalesce(p_recent_only,false) or p.created_at >= now()-interval '7 days')
+      and (not coalesce(p_photos_only,false) or cardinality(coalesce(p.image_paths,'{}'::text[]))>0)
+      and (
+        auth.uid() is null
+        or p.author_id is null
+        or not exists (
+          select from public.lt_blocks b
+          where b.owner_id=(select auth.uid()) and b.member_id=p.author_id
+        )
+      )
+  )
+  select
+    f.id,f.category,f.title,f.content,f.author_id,f.image_paths,f.view_count,
+    f.created_at,f.updated_at,f.like_count,f.comment_count,f.total_count
+  from filtered f
+  order by
+    case when p_sort='oldest' then f.created_at end asc nulls last,
+    case when p_sort='popular' then f.like_count end desc nulls last,
+    case when p_sort='popular' then f.view_count end desc nulls last,
+    case when p_sort='views' then f.view_count end desc nulls last,
+    case when p_sort='newest' then f.created_at end desc nulls last,
+    f.created_at desc,f.id desc
+  limit least(greatest(coalesce(p_page_size,10),1),30)
+  offset (greatest(coalesce(p_page,1),1)-1)*least(greatest(coalesce(p_page_size,10),1),30);
+$;
+
 commit;
