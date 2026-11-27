@@ -74,10 +74,10 @@ const popularity=ok(await A.client.rpc("browse_tortoise_posts",{
   p_recent_only:false,p_photos_only:false
 }));
 assert.equal(popularity[0]?.like_count,1);
-const sortSeeds=ok(await admin.from("tortoise_posts").insert([
+ok(await admin.from("tortoise_posts").insert([
   {author_id:A.id,category:"free",title:"정렬 회귀 오래된 글",content:"오래된 테스트 글",created_at:"2020-01-01T00:00:00Z",view_count:3},
   {author_id:A.id,category:"question",title:"정렬 회귀 최신 글",content:"최신 테스트 글",created_at:"2026-11-27T00:00:00Z",view_count:70}
-]).select("id,title"));
+]));
 const sortArgs={p_category:"all",p_query:"정렬 회귀",p_page:1,p_page_size:20,p_recent_only:false,p_photos_only:false};
 assert.equal(ok(await A.client.rpc("browse_tortoise_posts",{...sortArgs,p_sort:"oldest"}))[0].title,"정렬 회귀 오래된 글");
 assert.equal(ok(await A.client.rpc("browse_tortoise_posts",{...sortArgs,p_sort:"newest"}))[0].title,"정렬 회귀 최신 글");
