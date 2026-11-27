@@ -70,7 +70,11 @@ export function SafetyActions({
       action === "block"
         ? ""
         : window.prompt("신고 사유를 입력해 주세요 (최대 500자).")?.trim();
-    if (action !== "block" && (!reason || reason.length > 500)) return;
+    if (action !== "block" && reason === undefined) return;
+    if (action !== "block" && (!reason || reason.length > 500)) {
+      setMessage("신고 사유를 1~500자로 입력해 주세요.");
+      return;
+    }
     if (
       action === "block" &&
       !window.confirm("이 회원의 글과 댓글을 숨길까요?")
@@ -88,7 +92,9 @@ export function SafetyActions({
             });
       setMessage(
         error
-          ? error.code === "23505"
+          ? error.code === "PT429"
+            ? "한 시간에 신고 10건까지 접수할 수 있습니다. 잠시 후 다시 시도해 주세요."
+            : error.code === "23505"
             ? "이미 접수되었습니다."
             : "처리하지 못했습니다. 다시 시도해 주세요."
           : "처리되었습니다.",
