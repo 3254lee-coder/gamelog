@@ -33,3 +33,4 @@ for attempt in {1..40}; do
   sleep 1
 done
 node "$root/tests/supabase/live.mjs"
+node "$root/tests/supabase/account-browser.mjs"
