@@ -90,6 +90,7 @@ grant select,insert,delete on public.tortoise_post_likes to anon,authenticated;
 
 alter table public.tortoise_notifications enable row level security;
 create policy own_notifications_read on public.tortoise_notifications for select to authenticated using(recipient_id=auth.uid());
+create policy own_notifications_update on public.tortoise_notifications for update to authenticated using(recipient_id=auth.uid()) with check(recipient_id=auth.uid());
 grant select,update on public.tortoise_notifications to authenticated;
 
 alter table public.tortoises enable row level security;
