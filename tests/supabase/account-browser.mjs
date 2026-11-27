@@ -64,7 +64,9 @@ try {
   await mobile.getByRole("heading",{name:"모바일 게시글 수정 회귀",exact:true}).waitFor();
   mobile.once("dialog",dialog=>dialog.accept());
   await mobile.getByRole("button",{name:"삭제",exact:true}).click();
-  await mobile.getByRole("heading",{name:"게시글을 찾을 수 없어요"}).waitFor();
+  await mobile.waitForURL(base+"/community");
+  await mobile.getByLabel("게시글 검색").fill("모바일 게시글 수정 회귀");
+  await mobile.getByText("검색 결과 0개").waitFor();
   assert.ok(await mobile.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
 
   await mobile.goto(base+"/growth");
