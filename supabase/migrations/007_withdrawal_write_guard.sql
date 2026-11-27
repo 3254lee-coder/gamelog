@@ -105,7 +105,7 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
+as $browse$
   with filtered as (
     select
       p.id,
@@ -151,6 +151,6 @@ as $
     f.created_at desc,f.id desc
   limit least(greatest(coalesce(p_page_size,10),1),30)
   offset (greatest(coalesce(p_page,1),1)-1)*least(greatest(coalesce(p_page_size,10),1),30);
-$;
+$browse$;
 
 commit;
