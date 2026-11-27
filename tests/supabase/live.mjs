@@ -54,7 +54,21 @@ assert.equal(await processVerifiedWithdrawal(admin,A.id,1),false);
 await assert.rejects(processVerifiedWithdrawal(admin,A.id));
 assert.equal(ok(await admin.from("tortoise_posts").select("title").eq("id",post.id).single()).title,"A original");
 ok(await admin.from("lt_test_hold").delete().eq("owner_id",A.id));
-assert.equal(await processVerifiedWithdrawal(admin,A.id),true);
+const endpoint="http://127.0.0.1:3218/api/account/withdrawal";
+async function requestWithdrawal(client) {
+  const headers={"Content-Type":"application/json"};
+  if(client)headers.Authorization="Bearer "+ok(await client.auth.getSession()).session.access_token;
+  return fetch(endpoint,{method:"POST",headers,body:JSON.stringify({member:A.id})});
+}
+assert.equal((await requestWithdrawal()).status,401);
+const wrongMember=await requestWithdrawal(B.client);
+assert.ok(!wrongMember.ok);
+assert.equal(ok(await admin.auth.admin.getUserById(A.id)).user.id,A.id);
+assert.equal(ok(await admin.auth.admin.getUserById(B.id)).user.id,B.id);
+const completed=await requestWithdrawal(A.client);
+assert.equal(completed.status,200);
+assert.equal((await completed.json()).status,"complete");
+console.log("PASS: Next.js route rejects anonymous and unrelated sessions and completes verified A request");
 const deleted=await admin.auth.admin.getUserById(A.id);
 assert.ok(deleted.error && (deleted.error.status===404 || deleted.error.code==="user_not_found"));
 assert.equal(ok(await admin.auth.admin.getUserById(B.id)).user.id,B.id);
