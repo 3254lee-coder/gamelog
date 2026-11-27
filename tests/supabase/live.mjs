@@ -22,6 +22,7 @@ const gallery="tortoise-post-images",diary="tortoise-growth-photos";
 ok(await upload(A,gallery,"post.png"));ok(await upload(A,diary,"growth.png"));ok(await upload(B,gallery,"keep.png"));
 const post=ok(await A.client.from("tortoise_posts").insert({author_id:A.id,title:"A original",content:"A private text",image_paths:[A.id+"/post.png"]}).select().single());
 const bPost=ok(await B.client.from("tortoise_posts").insert({author_id:B.id,title:"B original",content:"B post remains",image_paths:[B.id+"/keep.png"]}).select().single());
+assert.equal(ok(await A.client.rpc("increment_tortoise_post_view",{target_post_id:bPost.id})),1);
 const parent=ok(await A.client.from("tortoise_comments").insert({author_id:A.id,post_id:post.id,nickname:"회원 A",content:"parent"}).select().single());
 const reply=ok(await B.client.from("tortoise_comments").insert({author_id:B.id,post_id:post.id,parent_id:parent.id,nickname:"회원 B",content:"B reply"}).select().single());
 const automaticNotice=ok(await A.client.from("tortoise_notifications")
@@ -166,6 +167,9 @@ function assertWithdrawalWriteBlocked(result) {
 }
 assertWithdrawalWriteBlocked(await A.client.from("tortoise_posts").insert({
   author_id:A.id,title:"late post",content:"must be blocked"
+}));
+assertWithdrawalWriteBlocked(await A.client.rpc("increment_tortoise_post_view",{
+  target_post_id:bPost.id
 }));
 assertWithdrawalWriteBlocked(await A.client.from("tortoise_comments").insert({
   author_id:A.id,post_id:bPost.id,nickname:"회원 A",content:"late comment"
