@@ -34,3 +34,4 @@ for attempt in {1..40}; do
 done
 node "$root/tests/supabase/live.mjs"
 node "$root/tests/supabase/account-browser.mjs"
+node --test "$root/tests/withdrawal-runner.test.mjs"
