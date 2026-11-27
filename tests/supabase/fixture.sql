@@ -38,3 +38,126 @@ alter table public.tortoise_comments add column created_at timestamptz default n
 alter table public.tortoise_notifications add column comment_id uuid, add column kind text, add column created_at timestamptz default now();
 create table public.tortoise_post_likes(post_id uuid references public.tortoise_posts on delete cascade,user_id uuid references auth.users on delete cascade,created_at timestamptz default now(),primary key(post_id,user_id));
 grant select on public.tortoise_post_likes to authenticated;
+
+
+-- Production-shaped feature schema for web regression coverage. The catalog
+-- metadata came from the read-only production preflight; no production data is copied.
+alter table public.tortoise_posts
+  add column updated_at timestamptz not null default now(),
+  add column view_count bigint not null default 0,
+  add constraint tortoise_posts_category_check check (category in ('free','tips','question')),
+  add constraint tortoise_posts_title_check check (char_length(trim(title)) between 2 and 100),
+  add constraint tortoise_posts_content_check check (char_length(trim(content)) between 1 and 20000);
+alter table public.tortoise_comments
+  add column updated_at timestamptz not null default now(),
+  add constraint tortoise_comments_content_check check (char_length(trim(content)) between 1 and 2000),
+  add constraint tortoise_comments_nickname_check check (char_length(trim(nickname)) between 2 and 20);
+alter table public.tortoise_pinned_posts add column pinned_at timestamptz not null default now();
+alter table public.tortoises
+  add column species text,
+  add column birth_date date,
+  add column adoption_date date,
+  add column photo_path text,
+  add column created_at timestamptz not null default now();
+alter table public.tortoise_growth_records
+  add column measured_on date not null default current_date,
+  add column weight_g numeric(10,2),
+  add column shell_length_cm numeric(8,2),
+  add column photo_path text,
+  add column created_at timestamptz not null default now(),
+  add constraint growth_measurement_present check (weight_g is not null or shell_length_cm is not null),
+  add constraint growth_weight_positive check (weight_g is null or weight_g > 0),
+  add constraint growth_shell_positive check (shell_length_cm is null or shell_length_cm > 0);
+alter table public.tortoise_notifications
+  add constraint tortoise_notifications_kind_check check (kind in ('comment','reply'));
+
+drop policy read_posts on public.tortoise_posts;
+create policy read_posts on public.tortoise_posts for select to anon,authenticated using(true);
+drop policy read_comments on public.tortoise_comments;
+create policy read_comments on public.tortoise_comments for select to anon,authenticated using(true);
+create policy own_posts_update on public.tortoise_posts for update to authenticated using(author_id=auth.uid()) with check(author_id=auth.uid());
+create policy own_posts_delete on public.tortoise_posts for delete to authenticated using(author_id=auth.uid());
+create policy own_comments_update on public.tortoise_comments for update to authenticated using(author_id=auth.uid()) with check(author_id=auth.uid());
+create policy own_comments_delete on public.tortoise_comments for delete to authenticated using(author_id=auth.uid());
+grant select on public.tortoise_posts,public.tortoise_comments to anon;
+grant update,delete on public.tortoise_posts,public.tortoise_comments to authenticated;
+
+alter table public.tortoise_post_likes enable row level security;
+create policy read_likes on public.tortoise_post_likes for select to anon,authenticated using(true);
+create policy own_likes_insert on public.tortoise_post_likes for insert to authenticated with check(user_id=auth.uid());
+create policy own_likes_delete on public.tortoise_post_likes for delete to authenticated using(user_id=auth.uid());
+grant select,insert,delete on public.tortoise_post_likes to anon,authenticated;
+
+alter table public.tortoise_notifications enable row level security;
+create policy own_notifications_read on public.tortoise_notifications for select to authenticated using(recipient_id=auth.uid());
+grant select,update on public.tortoise_notifications to authenticated;
+
+alter table public.tortoises enable row level security;
+create policy own_tortoises_select on public.tortoises for select to authenticated using(user_id=auth.uid());
+create policy own_tortoises_insert on public.tortoises for insert to authenticated with check(user_id=auth.uid());
+create policy own_tortoises_update on public.tortoises for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
+create policy own_tortoises_delete on public.tortoises for delete to authenticated using(user_id=auth.uid());
+grant select,insert,update,delete on public.tortoises to authenticated;
+
+alter table public.tortoise_growth_records enable row level security;
+create policy own_growth_select on public.tortoise_growth_records for select to authenticated using(user_id=auth.uid());
+create policy own_growth_insert on public.tortoise_growth_records for insert to authenticated with check(user_id=auth.uid());
+create policy own_growth_update on public.tortoise_growth_records for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
+create policy own_growth_delete on public.tortoise_growth_records for delete to authenticated using(user_id=auth.uid());
+grant select,insert,update,delete on public.tortoise_growth_records to authenticated;
+
+create policy fixture_owner_select on storage.objects for select to authenticated using(owner_id=(select auth.uid())::text);
+create policy fixture_owner_update on storage.objects for update to authenticated
+  using(owner_id=(select auth.uid())::text)
+  with check(owner_id=(select auth.uid())::text and (storage.foldername(name))[1]=(select auth.uid())::text);
+create policy fixture_owner_delete on storage.objects for delete to authenticated using(owner_id=(select auth.uid())::text);
+
+create function public.browse_tortoise_posts(
+  p_category text,p_query text,p_sort text,p_page integer,p_page_size integer,
+  p_recent_only boolean,p_photos_only boolean
+) returns table(
+  id uuid,category text,title text,content text,author_id uuid,image_paths text[],
+  view_count bigint,created_at timestamptz,updated_at timestamptz,
+  like_count bigint,comment_count bigint,total_count bigint
+) language sql stable set search_path='' as $$
+  with filtered as (
+    select p.id,p.category,p.title,p.content,p.author_id,p.image_paths,p.view_count,p.created_at,p.updated_at,
+      (select count(*) from public.tortoise_post_likes l where l.post_id=p.id)::bigint as likes,
+      (select count(*) from public.tortoise_comments c where c.post_id=p.id)::bigint as comments
+    from public.tortoise_posts p
+    where (p_category='all' or p.category=p_category)
+      and (coalesce(p_query,'')='' or p.title ilike '%'||p_query||'%' or p.content ilike '%'||p_query||'%')
+      and (not coalesce(p_recent_only,false) or p.created_at>=now()-interval '7 days')
+      and (not coalesce(p_photos_only,false) or cardinality(p.image_paths)>0)
+  )
+  select f.id,f.category,f.title,f.content,f.author_id,f.image_paths,f.view_count,f.created_at,f.updated_at,
+    f.likes,f.comments,count(*) over()::bigint
+  from filtered f
+  order by
+    case when p_sort='popular' then f.likes end desc nulls last,
+    case when p_sort='views' then f.view_count end desc nulls last,
+    case when p_sort='oldest' then f.created_at end asc nulls last,
+    case when p_sort not in ('popular','views','oldest') then f.created_at end desc nulls last
+  limit greatest(coalesce(p_page_size,20),1)
+  offset greatest(coalesce(p_page,1)-1,0)*greatest(coalesce(p_page_size,20),1)
+$$;
+grant execute on function public.browse_tortoise_posts(text,text,text,integer,integer,boolean,boolean) to anon,authenticated;
+
+create function public.get_tortoise_post_authors(p_post_ids uuid[])
+returns table(post_id uuid,nickname text)
+language sql stable security definer set search_path='' as $$
+  select p.id,coalesce(u.raw_user_meta_data->>'nickname','회원')
+  from public.tortoise_posts p join auth.users u on u.id=p.author_id
+  where p.id=any(p_post_ids)
+$$;
+grant execute on function public.get_tortoise_post_authors(uuid[]) to anon,authenticated;
+
+create function public.increment_tortoise_post_view(target_post_id uuid)
+returns bigint language plpgsql security definer set search_path='' as $$
+declare views bigint;
+begin
+  update public.tortoise_posts set view_count=view_count+1 where id=target_post_id returning view_count into views;
+  return views;
+end;
+$$;
+grant execute on function public.increment_tortoise_post_view(uuid) to anon,authenticated;
