@@ -29,6 +29,15 @@ const automaticNotice=ok(await A.client.from("tortoise_notifications")
   .select("id,comment_id").eq("recipient_id",A.id).eq("comment_id",reply.id));
 assert.ok(automaticNotice.length>0,"B's reply should notify A automatically");
 ok(await A.client.from("lt_blocks").insert({member_id:B.id}));
+const guest=createClient(url,process.env.ANON_KEY,options);
+assert.equal(ok(await A.client.from("tortoise_posts").select("id").eq("id",bPost.id).maybeSingle()),null);
+const directlyBlockedComments=ok(await A.client.from("tortoise_comments").select("author_id").eq("post_id",post.id));
+assert.ok(!directlyBlockedComments.some(row=>row.author_id===B.id));
+assert.deepEqual(ok(await A.client.from("tortoise_notifications").select("id").eq("recipient_id",A.id).eq("comment_id",reply.id)),[]);
+assert.deepEqual(ok(await A.client.rpc("get_tortoise_post_authors",{p_post_ids:[bPost.id]})),[]);
+assert.equal(ok(await guest.from("tortoise_posts").select("id").eq("id",bPost.id).maybeSingle()).id,bPost.id);
+assert.ok(ok(await guest.from("tortoise_comments").select("id").eq("post_id",post.id)).some(row=>row.id===reply.id));
+assert.ok(ok(await guest.rpc("get_tortoise_post_authors",{p_post_ids:[bPost.id]})).some(row=>row.post_id===bPost.id));
 const blockedNoticeFilter=await A.client.from("tortoise_notifications")
   .select("id,comment:tortoise_comments!tortoise_notifications_comment_id_fkey!inner(author_id)")
   .eq("recipient_id",A.id).not("comment.author_id","in",`(${B.id})`);
@@ -114,7 +123,7 @@ const pageTwo=ok(await A.client.rpc("browse_tortoise_posts",{
 assert.equal(pageOne.length,1);assert.equal(pageTwo.length,1);
 assert.notEqual(pageOne[0].id,pageTwo[0].id);
 assert.equal(pageOne[0].total_count,2);assert.equal(pageTwo[0].total_count,2);
-const anonymous=createClient(url,process.env.ANON_KEY,options);
+const anonymous=guest;
 const anonymousBrowse=ok(await anonymous.rpc("browse_tortoise_posts",{
   p_category:"all",p_query:"B original",p_sort:"newest",p_page:1,p_page_size:20,
   p_recent_only:false,p_photos_only:false
