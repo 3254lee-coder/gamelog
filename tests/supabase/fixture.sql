@@ -44,7 +44,6 @@ alter table public.tortoise_notifications
     foreign key(comment_id) references public.tortoise_comments on delete cascade,
   add constraint tortoise_notifications_recipient_id_comment_id_key
     unique(recipient_id,comment_id);
-alter table public.tortoise_notifications add constraint tortoise_notifications_comment_id_fkey foreign key(comment_id) references public.tortoise_comments on delete cascade;
 create table public.tortoise_post_likes(post_id uuid references public.tortoise_posts on delete cascade,user_id uuid references auth.users on delete cascade,created_at timestamptz default now(),primary key(post_id,user_id));
 grant select on public.tortoise_post_likes to authenticated;
 
