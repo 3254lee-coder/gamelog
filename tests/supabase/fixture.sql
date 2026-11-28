@@ -8,9 +8,9 @@ create table public.tortoise_growth_records(id uuid primary key default gen_rand
 create table public.lt_test_hold(owner_id uuid references auth.users);
 alter table public.tortoise_posts enable row level security;
 alter table public.tortoise_comments enable row level security;
-create policy read_posts on public.tortoise_posts for select to authenticated using(true);
+create policy posts_public_read on public.tortoise_posts for select to authenticated using(true);
 create policy own_posts on public.tortoise_posts for insert to authenticated with check(author_id=auth.uid());
-create policy read_comments on public.tortoise_comments for select to authenticated using(true);
+create policy comments_public_read on public.tortoise_comments for select to authenticated using(true);
 create policy own_comments on public.tortoise_comments for insert to authenticated with check(author_id=auth.uid());
 grant select,insert on public.tortoise_posts,public.tortoise_comments to authenticated;
 grant all on all tables in schema public to service_role;
@@ -79,10 +79,10 @@ alter table public.tortoise_growth_records
 alter table public.tortoise_notifications
   add constraint tortoise_notifications_kind_check check (kind in ('comment','reply'));
 
-drop policy read_posts on public.tortoise_posts;
-create policy read_posts on public.tortoise_posts for select to anon,authenticated using(true);
-drop policy read_comments on public.tortoise_comments;
-create policy read_comments on public.tortoise_comments for select to anon,authenticated using(true);
+drop policy posts_public_read on public.tortoise_posts;
+create policy posts_public_read on public.tortoise_posts for select to anon,authenticated using(true);
+drop policy comments_public_read on public.tortoise_comments;
+create policy comments_public_read on public.tortoise_comments for select to anon,authenticated using(true);
 create policy own_posts_update on public.tortoise_posts for update to authenticated using(author_id=auth.uid()) with check(author_id=auth.uid());
 create policy own_posts_delete on public.tortoise_posts for delete to authenticated using(author_id=auth.uid());
 create policy own_comments_update on public.tortoise_comments for update to authenticated using(author_id=auth.uid()) with check(author_id=auth.uid());
