@@ -36,6 +36,11 @@ begin
   delete from public.tortoise_post_likes where user_id=member;
   delete from public.tortoise_growth_records where user_id=member;
   delete from public.tortoises where user_id=member;
+  -- Remove only the withdrawing member's own reports and private block edges.
+  -- Reports authored by other members remain governed by the existing Auth trigger.
+  delete from public.lt_reports where reporter=member;
+  delete from public.lt_blocks
+    where owner_id=member or member_id=member;
   update public.lt_withdrawals set prepared_at=now() where owner_id=member;
 end;
 $$;
