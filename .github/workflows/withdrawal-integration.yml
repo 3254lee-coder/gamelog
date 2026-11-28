@@ -8,6 +8,7 @@ on:
       - 'supabase/migrations/**'
       - 'lib/withdrawal-runner.mjs'
       - 'app/api/account/withdrawal/**'
+        - 'docs/web-final-audit.md'
       - 'package.json'
       - 'pnpm-workspace.yaml'
       - 'pnpm-lock.yaml'
