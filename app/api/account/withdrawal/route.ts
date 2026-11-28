@@ -22,7 +22,16 @@ export async function POST(request: Request) {
       { status: done ? "complete" : "queued" },
       { status: done ? 200 : 202 },
     );
-  } catch {
+  } catch (error) {
+    // Keep retry details server-side and redact UUIDs before writing diagnostic logs.
+    const message = error instanceof Error ? error.message : "unknown error";
+    console.error(
+      "[withdrawal] processing failed:",
+      message.replace(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+        "[uuid]",
+      ),
+    );
     // The durable request remains available for the trusted retry worker.
     return Response.json({ status: "pending-review" }, { status: 503 });
   }
