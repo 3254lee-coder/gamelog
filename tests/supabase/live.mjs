@@ -30,14 +30,14 @@ const automaticNotice=ok(await A.client.from("tortoise_notifications")
 assert.ok(automaticNotice.length>0,"B's reply should notify A automatically");
 ok(await A.client.from("lt_blocks").insert({member_id:B.id}));
 const guest=createClient(url,process.env.ANON_KEY,options);
-assert.equal(ok(await A.client.from("tortoise_posts").select("id").eq("id",bPost.id).maybeSingle()),null);
+assert.deepEqual(ok(await A.client.from("tortoise_posts").select("id").eq("id",bPost.id)),[]);
 const directlyBlockedComments=ok(await A.client.from("tortoise_comments").select("author_id").eq("post_id",post.id));
 assert.ok(!directlyBlockedComments.some(row=>row.author_id===B.id));
-const directBlockedNotice=await A.client.from("tortoise_notifications").select("id").eq("recipient_id",A.id).eq("comment_id",reply.id).maybeSingle();
+const directBlockedNotice=await A.client.from("tortoise_notifications").select("id").eq("recipient_id",A.id).eq("comment_id",reply.id);
 assert.ok(!directBlockedNotice.error,JSON.stringify(directBlockedNotice.error));
-assert.equal(directBlockedNotice.data,null);
+assert.deepEqual(directBlockedNotice.data,[]);
 assert.deepEqual(ok(await A.client.rpc("get_tortoise_post_authors",{p_post_ids:[bPost.id]})),[]);
-assert.equal(ok(await guest.from("tortoise_posts").select("id").eq("id",bPost.id).maybeSingle()).id,bPost.id);
+assert.deepEqual(ok(await guest.from("tortoise_posts").select("id").eq("id",bPost.id)),[{id:bPost.id}]);
 assert.ok(ok(await guest.from("tortoise_comments").select("id").eq("post_id",post.id)).some(row=>row.id===reply.id));
 assert.ok(ok(await guest.rpc("get_tortoise_post_authors",{p_post_ids:[bPost.id]})).some(row=>row.post_id===bPost.id));
 const blockedNoticeFilter=await A.client.from("tortoise_notifications")
