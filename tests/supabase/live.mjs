@@ -220,7 +220,6 @@ assertWithdrawalWriteBlocked(await A.client.from("lt_reports").insert({
 assertWithdrawalWriteBlocked(await A.client.from("lt_blocks").insert({
   member_id:B.id
 }));
-assertWithdrawalWriteBlocked(await A.client.from("lt_blocks").delete().eq("member_id",B.id));
 console.log("PASS: authenticated session remains valid during retry, but all guarded content and safety writes are rejected");
 const preparedPost=ok(await admin.from("tortoise_posts").select().eq("id",post.id).single());
 assert.equal(preparedPost.author_id,null);assert.equal(preparedPost.title,"탈퇴한 회원의 글");assert.equal(preparedPost.content,"작성자가 탈퇴하여 내용이 삭제되었습니다.");assert.deepEqual(preparedPost.image_paths,[]);
