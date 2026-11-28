@@ -174,6 +174,10 @@ export default function CommunityPage() {
   );
 
   useEffect(() => {
+    setPage(1);
+  }, [blocked]);
+
+  useEffect(() => {
     if (!supabase) {
       setError("Supabase 연결 설정을 확인해 주세요.");
       setLoading(false);
