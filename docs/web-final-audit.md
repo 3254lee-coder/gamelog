@@ -23,7 +23,7 @@
 | 로컬 PGlite 테스트 | 미실행 완료: 설치 패키지에서 `@electric-sql/pglite`를 찾지 못해 중단. CI의 격리 Supabase 테스트는 성공 |
 | 라이브 사이트 읽기 전용 GET | `/`, `/guide`, `/community`, `/species`, `/growth`, `/login`, `/robots.txt`, `/sitemap.xml` 모두 HTTP 200 |
 | 기준 CI | [GitHub Actions run 45919846552](https://github.com/3254lee-coder/gamelog/actions/runs/45919846552), `d113556` 대상 성공. 빌드·타입 검사·ESLint·격리 Supabase 및 브라우저 검증 단계 모두 성공 |
-| 최신 CI | [GitHub Actions run 46107724755](https://github.com/3254lee-coder/gamelog/actions/runs/46107724755), `30b4af2` 대상 성공. `pnpm audit`, ESLint, Next.js build(타입 검사 포함), 격리 Supabase 및 브라우저 검증 단계 모두 성공 |
+| 최신 코드 및 워크플로 재검증 CI | [GitHub Actions run 46111401426](https://github.com/3254lee-coder/gamelog/actions/runs/46111401426), `33d7163` 대상 성공. lockfile 설치, `pnpm audit`, ESLint, Next.js build(타입 검사 포함), 격리 Supabase 및 브라우저 검증 모두 성공. 바로 앞 감사 문서 경로 필터 커밋의 YAML 들여쓰기 오류로 발생한 [실패 run 46111330005](https://github.com/3254lee-coder/gamelog/actions/runs/46111330005)은 작업이 생성되지 않았으며, 들여쓰기 수정 후 전 단계 통과를 확인했다. |
 
 최신 CI 로그의 격리 데이터 검증 결과: 관리자 신고 검토/처리와 일반 회원 큐 접근 거부, 신고 제한·중복 신고·신고자 비공개·차단 격리, 게시글 수정/삭제, 좋아요, 검색·인기 정렬, 알림 read_at 권한, 성장 기록/사진 CRUD, 미준비 탈퇴 사진 조회·직접 Auth 삭제 거부, 동시 업로드 및 탈퇴 중 쓰기 차단, Storage 실패 후 계정 보존/재시도, 탈퇴 API 본인 인증, 타 회원 답글·사진 보존과 개인정보 정리, 모바일 회원가입·동의/프로필/관리자 화면, 데스크톱 비밀번호 복구/로그인이 통과했다. 실제 운영 계정이나 데이터를 쓰지 않았다.
 
@@ -43,7 +43,7 @@
 | P1-01 | 기존 회귀 및 실브라우저 시나리오를 확장·재사용했다. | 최신 격리 CI에서 게시글 수정/삭제, 좋아요, 검색/정렬, 알림 권한, 성장/사진 CRUD, 관리자 신고 처리와 브라우저 가입/프로필/복구 검증 통과. 전체 R01~R12 행렬은 미완료. | 미검증 | `tests/supabase/live.mjs`, `tests/supabase/account-browser.mjs`, 최신 CI, 라이브 GET 기록 | 모바일 360/390/768 전체 및 실제 기기, 남은 게시글 5장·댓글 CRUD, 이메일 전달, SEO noindex/카카오, Analytics를 검증해야 한다. |
 | P1-02 | 목록 RPC에서 차단 게시글을 서버에서 총건수/페이지 계산 전에 제외하고, 댓글·알림 필터와 페이지 갱신을 보완했다. | 최신 CI에서 차단 관계 격리, 검색/페이지 집계, 알림 필터 통과. | 부적합 | `supabase/migrations/007_withdrawal_write_guard.sql`, `app/community/page.tsx`, `components/community-comments.tsx`, `components/notifications.tsx`, 최신 CI | 정책의 차단 방향·적용 범위가 승인되지 않았다. 상세 페이지는 PostgREST로 게시글을 불러온 뒤 클라이언트에서 가리는 구조여서 차단된 글의 직접 API 접근 차단을 보장하지 않는다. 이 누락을 격리 환경에서 보완·검증하고 정책 승인 전 `NEXT_PUBLIC_MEMBER_SAFETY`를 운영 빌드에서 켜지 않아야 한다. 신고 10건도 잠정값이다. |
 | P1-03 | 공개 개인정보/이용 문서와 기술 동작을 정적 검토했다. | 운영자 정책 승인 또는 법률 검토 결과 없음. | 미검증 | `app/privacy/page.tsx`, `app/terms/page.tsx`, `docs/withdrawal.md` | 신고·탈퇴 기록 보관 목적/기간, 백업에 남는 삭제 데이터, 처리 실패 안내와 문의 경로, 외부 서비스 사용을 정책 소유자가 결정해야 한다. 법률 적합성은 판정하지 않았다. |
-| P1-04 | 기존 GitHub Actions를 유지하고 `pnpm audit`을 추가했다. | 최신 코드 커밋에서 lockfile 설치, `pnpm audit`, ESLint, Next.js build(타입 검사 포함), 격리 Supabase·브라우저 검증 모두 성공. | 적합 | `.github/workflows/withdrawal-integration.yml`, [최신 코드 CI run](https://github.com/3254lee-coder/gamelog/actions/runs/46107724755) | 운영 오류·사진 업로드 실패·미처리 신고 점검은 문서화된 비밀값 없는 운영 절차를 따른다. |
+| P1-04 | 기존 GitHub Actions를 유지하고 `pnpm audit`을 추가했다. | 최신 코드 및 워크플로 수정 커밋에서 lockfile 설치, `pnpm audit`, ESLint, Next.js build(타입 검사 포함), 격리 Supabase·브라우저 검증 모두 성공. | 적합 | `.github/workflows/withdrawal-integration.yml`, [재검증 CI run](https://github.com/3254lee-coder/gamelog/actions/runs/46111401426) | 운영 오류·사진 업로드 실패·미처리 신고 점검은 문서화된 비밀값 없는 운영 절차를 따른다. |
 
 ## 기존 기능 회귀 R01~R12
 
