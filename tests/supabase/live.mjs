@@ -188,6 +188,8 @@ const [prepared,race]=await Promise.all([admin.rpc("lt_prepare_withdrawal",{memb
 const late=await upload(A,gallery,"late.png");assert.ok(late.error);
 console.log("Concurrent upload:",race.error?"blocked":"committed before preparation");
 assert.ok(ok(await admin.from("lt_withdrawals").select("prepared_at").eq("owner_id",A.id).single()).prepared_at);
+assert.deepEqual(ok(await admin.from("lt_blocks").select("owner_id,member_id").or(`owner_id.eq.${A.id},member_id.eq.${A.id}`)),[]);
+assert.deepEqual(ok(await admin.from("lt_reports").select("id").eq("reporter",A.id)),[]);
 const activeSession=ok(await A.client.auth.getUser()).user;
 assert.equal(activeSession.id,A.id);
 function assertWithdrawalWriteBlocked(result) {
