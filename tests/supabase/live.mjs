@@ -64,7 +64,8 @@ console.log("PASS: isolated administrator can review and resolve reports; member
 assert.deepEqual(ok(await B.client.from("lt_reports").select("id,status")),[]);
 assert.ok((await B.client.from("lt_reports").select("reporter")).error);
 ok(await B.client.from("lt_blocks").insert({member_id:A.id}));
-assert.deepEqual(ok(await A.client.from("lt_blocks").select("member_id")),[]);
+assert.deepEqual(ok(await A.client.from("lt_blocks").select("member_id")),[{member_id:B.id}]);
+assert.deepEqual(ok(await B.client.from("lt_blocks").select("member_id")),[{member_id:A.id}]);
 ok(await B.client.from("lt_blocks").delete().eq("member_id",A.id));
 assert.deepEqual(ok(await B.client.from("lt_blocks").select("member_id")),[]);
 const targets=ok(await A.client.from("tortoise_posts").insert(Array.from({length:10},()=>({author_id:A.id,title:"fixture",content:"fixture"}))).select("id"));
