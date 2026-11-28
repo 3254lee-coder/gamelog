@@ -116,7 +116,7 @@ assert.notEqual(pageOne[0].id,pageTwo[0].id);
 assert.equal(pageOne[0].total_count,2);assert.equal(pageTwo[0].total_count,2);
 const anonymous=createClient(url,process.env.ANON_KEY,options);
 const anonymousBrowse=ok(await anonymous.rpc("browse_tortoise_posts",{
-  p_category:"all",p_query:"A original",p_sort:"newest",p_page:1,p_page_size:20,
+  p_category:"all",p_query:"B original",p_sort:"newest",p_page:1,p_page_size:20,
   p_recent_only:false,p_photos_only:false
 }));
 assert.ok(anonymousBrowse.some(row=>row.id===bPost.id),"public browsing remains unchanged");
@@ -138,9 +138,9 @@ const hiddenPage=ok(await A.client.rpc("browse_tortoise_posts",{
 assert.equal(visiblePage.length,1);assert.equal(visiblePage[0].id,visiblePagePost.id);
 assert.equal(visiblePage[0].total_count,1);assert.deepEqual(hiddenPage,[]);
 assert.ok(ok(await A.client.rpc("browse_tortoise_posts",{
-  p_category:"all",p_query:"B original",p_sort:"newest",p_page:1,p_page_size:20,
+  p_category:"all",p_query:"A original",p_sort:"newest",p_page:1,p_page_size:20,
   p_recent_only:false,p_photos_only:true
-})).some(row=>row.id===bPost.id));
+})).some(row=>row.id===post.id));
 
 ok(await B.client.from("tortoise_post_likes").delete().eq("post_id",post.id).eq("user_id",B.id));
 
