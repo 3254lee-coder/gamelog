@@ -262,3 +262,75 @@ $notification$;
 create trigger create_tortoise_notification_trigger
 after insert on public.tortoise_comments
 for each row execute function public.create_tortoise_notification();
+
+-- Test-only dashboard RPC contract with the same role check and JSON keys as
+-- production. The fixture contains generated test accounts only.
+create or replace function public.get_tortoise_admin_dashboard()
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $dashboard$
+declare
+  today_kst date := (now() at time zone 'Asia/Seoul')::date;
+  result jsonb;
+begin
+  if auth.uid() is distinct from '5226f8c2-84ca-4189-b2a1-3a569bd3205c'::uuid then
+    raise exception '관리자 권한이 필요합니다.' using errcode='42501';
+  end if;
+
+  select jsonb_build_object(
+    'members',(select count(*) from auth.users),
+    'members_today',(select count(*) from auth.users where (created_at at time zone 'Asia/Seoul')::date=today_kst),
+    'members_week',(select count(*) from auth.users where (created_at at time zone 'Asia/Seoul')::date between today_kst-6 and today_kst),
+    'posts',(select count(*) from public.tortoise_posts),
+    'comments',(select count(*) from public.tortoise_comments),
+    'replies',(select count(*) from public.tortoise_comments where parent_id is not null),
+    'likes',(select count(*) from public.tortoise_post_likes),
+    'turtles',(select count(*) from public.tortoises),
+    'growth_records',(select count(*) from public.tortoise_growth_records),
+    'notices',(select count(*) from public.tortoise_pinned_posts),
+    'recent_members',(
+      select coalesce(jsonb_agg(to_jsonb(m) order by m.created_at desc),'[]'::jsonb)
+      from (
+        select coalesce(nullif(raw_user_meta_data->>'nickname',''),nullif(raw_user_meta_data->>'display_name',''),nullif(raw_user_meta_data->>'name',''),'회원') as nickname,
+          created_at,last_sign_in_at
+        from auth.users order by created_at desc limit 50
+      ) m
+    ),
+    'recent_posts',(
+      select coalesce(jsonb_agg(to_jsonb(p) order by p.created_at desc),'[]'::jsonb)
+      from (select id,title,category,view_count,created_at from public.tortoise_posts order by created_at desc limit 20) p
+    ),
+    'recent_comments',(
+      select coalesce(jsonb_agg(to_jsonb(c) order by c.created_at desc),'[]'::jsonb)
+      from (
+        select c.id,c.post_id,c.parent_id,c.nickname,left(c.content,200) as content,c.created_at,p.title as post_title
+        from public.tortoise_comments c join public.tortoise_posts p on p.id=c.post_id
+        order by c.created_at desc limit 20
+      ) c
+    ),
+    'pinned_posts',(
+      select coalesce(jsonb_agg(to_jsonb(n) order by n.pinned_at desc),'[]'::jsonb)
+      from (
+        select p.id,p.title,pin.pinned_at
+        from public.tortoise_pinned_posts pin join public.tortoise_posts p on p.id=pin.post_id
+        order by pin.pinned_at desc limit 50
+      ) n
+    ),
+    'daily_activity',(
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'date',days.day::date,
+        'members',(select count(*) from auth.users u where (u.created_at at time zone 'Asia/Seoul')::date=days.day::date),
+        'posts',(select count(*) from public.tortoise_posts p where (p.created_at at time zone 'Asia/Seoul')::date=days.day::date),
+        'comments',(select count(*) from public.tortoise_comments c where (c.created_at at time zone 'Asia/Seoul')::date=days.day::date)
+      ) order by days.day),'[]'::jsonb)
+      from generate_series((today_kst-6)::timestamp,today_kst::timestamp,interval '1 day') days(day)
+    )
+  ) into result;
+
+  return result;
+end;
+$dashboard$;
+revoke all on function public.get_tortoise_admin_dashboard() from public,anon;
+grant execute on function public.get_tortoise_admin_dashboard() to authenticated;
