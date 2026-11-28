@@ -9,12 +9,6 @@ declare
   member uuid;
   requester uuid := auth.uid();
 begin
-  -- Auth FK cascades must be able to remove a withdrawing member's own
-  -- moderation/block rows after content writes have been frozen.
-  if tg_op = 'DELETE' and tg_table_name in ('lt_reports', 'lt_blocks') then
-    return old;
-  end if;
-
   if auth.role() = 'service_role' then
     if tg_op = 'DELETE' then return old; end if;
     return new;
