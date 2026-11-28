@@ -34,6 +34,11 @@ const reply=ok(await B.client.from("tortoise_comments").insert({author_id:B.id,p
 const automaticNotice=ok(await A.client.from("tortoise_notifications")
   .select("id,comment_id").eq("recipient_id",A.id).eq("comment_id",reply.id));
 assert.ok(automaticNotice.length>0,"B's reply should notify A automatically");
+const notice=automaticNotice[0];
+ok(await A.client.from("tortoise_notifications").update({read_at:new Date().toISOString()})
+  .eq("id",notice.id).eq("recipient_id",A.id));
+assert.ok(ok(await A.client.from("tortoise_notifications").select("read_at").eq("id",notice.id).single()).read_at);
+assert.ok((await B.client.from("tortoise_notifications").update({post_title:"침범"}).eq("id",notice.id)).error);
 ok(await A.client.from("lt_blocks").insert({member_id:B.id}));
 const guest=createClient(url,process.env.ANON_KEY,options);
 assert.deepEqual(ok(await A.client.from("tortoise_posts").select("id").eq("id",bPost.id)),[]);
@@ -161,11 +166,6 @@ assert.ok(ok(await A.client.rpc("browse_tortoise_posts",{
 
 ok(await B.client.from("tortoise_post_likes").delete().eq("post_id",post.id).eq("user_id",B.id));
 
-const notice=automaticNotice[0];
-ok(await A.client.from("tortoise_notifications").update({read_at:new Date().toISOString()})
-  .eq("id",notice.id).eq("recipient_id",A.id));
-assert.ok(ok(await A.client.from("tortoise_notifications").select("read_at").eq("id",notice.id).single()).read_at);
-assert.ok((await B.client.from("tortoise_notifications").update({post_title:"침범"}).eq("id",notice.id)).error);
 
 const featureTurtle=ok(await A.client.from("tortoises").insert({
   user_id:A.id,name:"기능검증 거북이",species:"테스트 종"
