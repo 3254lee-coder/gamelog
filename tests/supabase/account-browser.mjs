@@ -94,6 +94,34 @@ try {
 
   await mobile.goto(base+"/admin");
   await mobile.getByText("접근 권한이 없습니다").waitFor();
+  const dashboardAdminId="5226f8c2-84ca-4189-b2a1-3a569bd3205c";
+  const dashboardAdminEmail="dashboard-"+randomUUID()+"@example.test";
+  const dashboardAdminPassword=randomUUID()+"Aa!";
+  const createdDashboardAdmin=await admin.auth.admin.createUser({
+    id:dashboardAdminId,email:dashboardAdminEmail,password:dashboardAdminPassword,email_confirm:true
+  });
+  if(createdDashboardAdmin.error)throw createdDashboardAdmin.error;
+  const adminPage=await browser.newPage({viewport:{width:390,height:844}});
+  await adminPage.goto(base+"/login");
+  await adminPage.locator("input[type=email]").fill(dashboardAdminEmail);
+  await adminPage.locator("input[type=password]").fill(dashboardAdminPassword);
+  await adminPage.locator('button[type=submit]').click();
+  await adminPage.waitForURL(base+"/my");
+  await adminPage.goto(base+"/admin");
+  await adminPage.getByRole("heading",{name:"관리자 대시보드"}).waitFor();
+  await adminPage.getByText("신고 관리",{exact:true}).waitFor();
+  await adminPage.getByText("최근 7일 활동 현황",{exact:true}).waitFor();
+  for(const [tab,heading] of [
+    ["회원","최근 가입 회원"],
+    ["게시글","최근 게시글"],
+    ["댓글","최근 댓글 및 대댓글"],
+    ["공지사항","현재 고정된 공지사항"],
+  ]) {
+    await adminPage.getByRole("button",{name:tab,exact:true}).click();
+    await adminPage.getByRole("heading",{name:heading,exact:true}).waitFor();
+  }
+  assert.ok(await adminPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await adminPage.close();
   const recovery=await admin.auth.admin.generateLink({type:"recovery",email});
   if(recovery.error) throw recovery.error;
   // Use the locally generated recovery token; external email delivery is out of scope.
