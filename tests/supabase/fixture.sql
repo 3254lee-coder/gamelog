@@ -1,3 +1,6 @@
+create schema recovery_probe;
+create table recovery_probe.synthetic_records(id uuid primary key, payload jsonb not null);
+
 -- Disposable local test project only. Auth and Storage are supplied by Supabase.
 create table public.tortoise_posts(id uuid primary key default gen_random_uuid(),author_id uuid not null references auth.users,title text not null,content text not null,image_paths text[] not null default '{}');
 create table public.tortoise_comments(id uuid primary key default gen_random_uuid(),post_id uuid not null references public.tortoise_posts on delete cascade,parent_id uuid references public.tortoise_comments on delete cascade,author_id uuid references auth.users,nickname text not null,content text not null);
