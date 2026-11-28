@@ -32,6 +32,9 @@ for attempt in {1..40}; do
   if curl -fsS http://127.0.0.1:3218/login -o /dev/null; then break; fi
   sleep 1
 done
-node "$root/tests/supabase/live.mjs"
+if ! node "$root/tests/supabase/live.mjs"; then
+  cat "$workdir/web.log"
+  exit 1
+fi
 node "$root/tests/supabase/account-browser.mjs"
 node --test "$root/tests/withdrawal-runner.test.mjs"
