@@ -7,7 +7,13 @@ const url = process.env.API_URL;
 assert.ok(["http://127.0.0.1:54321","http://localhost:54321"].includes(url));
 const options = {auth:{persistSession:false,autoRefreshToken:false}};
 const admin = createClient(url,process.env.SERVICE_ROLE_KEY,options);
-function ok(result) { if (result.error) throw result.error; return result.data; }
+function ok(result) {
+  if (result.error) {
+    const error = new Error(`${result.error.code ?? "SUPABASE"}: ${result.error.message}`, {cause:result.error});
+    throw error;
+  }
+  return result.data;
+}
 async function member(label) {
   const client = createClient(url,process.env.ANON_KEY,options);
   const email=label+"-"+randomUUID()+"@example.test",password=randomUUID()+"Aa!";
