@@ -136,9 +136,7 @@ assert.ok(ok(await A.client.rpc("browse_tortoise_posts",{
 
 ok(await B.client.from("tortoise_post_likes").delete().eq("post_id",post.id).eq("user_id",B.id));
 
-const notice=ok(await admin.from("tortoise_notifications").insert({
-  recipient_id:A.id,post_id:post.id,comment_id:reply.id,kind:"comment",post_title:"A original"
-}).select("id").single());
+const notice=automaticNotice[0];
 ok(await A.client.from("tortoise_notifications").update({read_at:new Date().toISOString()})
   .eq("id",notice.id).eq("recipient_id",A.id));
 assert.ok(ok(await A.client.from("tortoise_notifications").select("read_at").eq("id",notice.id).single()).read_at);
