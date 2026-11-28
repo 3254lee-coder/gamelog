@@ -44,6 +44,13 @@ const adminEmail="isolated-admin-"+randomUUID()+"@example.test";
 const adminPassword=randomUUID()+"Aa!";
 ok(await admin.auth.admin.createUser({id:adminUid,email:adminEmail,password:adminPassword,email_confirm:true}));
 ok(await moderationAdmin.auth.signInWithPassword({email:adminEmail,password:adminPassword}));
+const ordinaryDashboard=await A.client.rpc("get_tortoise_admin_dashboard");
+assert.equal(ordinaryDashboard.error?.code,"42501");
+const dashboard=ok(await moderationAdmin.rpc("get_tortoise_admin_dashboard"));
+for(const key of ["members","members_today","members_week","posts","comments","replies","likes","turtles","growth_records","notices","recent_members","recent_posts","recent_comments","pinned_posts","daily_activity"])
+  assert.ok(Object.hasOwn(dashboard,key),`dashboard missing ${key}`);
+assert.equal(dashboard.daily_activity.length,7);
+assert.ok(dashboard.recent_members.every(row=>!Object.hasOwn(row,"email")&&!Object.hasOwn(row,"id")));
 assert.deepEqual(ok(await A.client.from("lt_reports").select("id,status").eq("target",post.id)),[]);
 const queuedReport=ok(await moderationAdmin.from("lt_reports").select("id,status").eq("target",post.id).single());
 assert.equal(queuedReport.status,"pending");
